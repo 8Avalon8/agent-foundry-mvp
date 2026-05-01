@@ -433,27 +433,31 @@ function renderStages(node) {{
   return section;
 }}
 
-function renderDecision(node) {{
+function renderDecision(node, tree) {{
   const props = node.props || {{}};
   const section = card(props.title || props.question_id || '决策');
+  const decision = tree?.state?.decisions?.[props.question_id];
   section.innerHTML += `<p class="meta">推荐：${{escapeHtml(props.recommendation?.value || '')}} ${{escapeHtml(props.recommendation?.reason || '')}}</p>`;
+  if (decision) section.innerHTML += `<p class="meta">当前选择：${{escapeHtml(Array.isArray(decision.value) ? decision.value.join(', ') : decision.value)}}</p>`;
   if (props.affects?.length) section.innerHTML += `<p class="meta">影响：${{escapeHtml(props.affects.join(', '))}}</p>`;
-  for (const child of node.children || []) section.appendChild(renderInput(child));
+  for (const child of node.children || []) section.appendChild(renderInput(child, tree));
   return section;
 }}
 
-function renderInput(node) {{
-  if (node.type === 'ChoiceGroup') return renderChoiceGroup(node, false);
-  if (node.type === 'MultiChoiceGroup') return renderChoiceGroup(node, true);
+function renderInput(node, tree) {{
+  if (node.type === 'ChoiceGroup') return renderChoiceGroup(node, tree, false);
+  if (node.type === 'MultiChoiceGroup') return renderChoiceGroup(node, tree, true);
   if (node.type === 'TextInputWithHint') return renderTextInput(node);
   return renderUnknown(node);
 }}
 
-function renderChoiceGroup(node, multi) {{
+function renderChoiceGroup(node, tree, multi) {{
   const props = node.props || {{}};
   const wrap = document.createElement('div');
   wrap.className = 'choice-list';
-  const selected = new Set(Array.isArray(props.recommended) ? props.recommended : [props.recommended]);
+  const decision = tree?.state?.decisions?.[props.state_key];
+  const decisionValue = decision?.value;
+  const selected = new Set(decision ? (Array.isArray(decisionValue) ? decisionValue : [decisionValue]) : []);
   for (const option of props.options || []) {{
     const label = document.createElement('label');
     label.className = 'choice';

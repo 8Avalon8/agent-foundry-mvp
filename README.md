@@ -426,7 +426,7 @@ python3 -m unittest discover -s tests -v
 | 权限安全 | 查看生成的 `agent.yaml` 与 `permission_checks.json` | 高风险动作没有静默 `allow`，长期记忆更新需要审批。 |
 | UI Demo | `python3 -m agent_foundry.cli ui-demo --output ./workspace/ui_demo` | 生成 review/writing 两条 action event -> AgentSpec -> dry run demo。 |
 | Conversation Builder | `python3 -m agent_foundry.cli chat-build "我想做一个 SVN Review Agent，帮我审查 diff" --llm-provider mock --reply "都按推荐" --format a2ui-json --output ./workspace` | 从自然语言目标和回答自动生成 Agent 工程与 dry run，并返回可渲染 A2UI tree。 |
-| Web Builder | `python3 -m agent_foundry.cli serve-web --llm-provider mock --output ./workspace/web_builder` | 打开网页后可渲染 A2UI、回传 action event，并生成 Agent 工程与 dry run。 |
+| Web Builder | `python3 -m agent_foundry.cli serve-web --llm-provider mock --output ./workspace/web_builder` | 打开网页后可渲染 A2UI、右侧面板点击会更新状态并回传 action event，最终生成 Agent 工程与 dry run。 |
 
 ---
 
