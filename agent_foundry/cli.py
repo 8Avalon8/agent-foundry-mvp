@@ -170,9 +170,12 @@ def cmd_new(args: argparse.Namespace) -> int:
     design_card_path.write_text(design_card.to_markdown(), encoding="utf-8")
 
     agent_spec = compile_agentspec(session, agent_name=args.agent_name)
-    agent_dir = generate_agent_files(agent_spec, output_root)
-    (agent_dir / "prespec_session.json").write_text(json.dumps(session.to_dict(), ensure_ascii=False, indent=2), encoding="utf-8")
-    (agent_dir / "agent_design_card.md").write_text(design_card.to_markdown(), encoding="utf-8")
+    agent_dir = generate_agent_files(
+        agent_spec,
+        output_root,
+        prespec_session=session.to_dict(),
+        design_card_markdown=design_card.to_markdown(),
+    )
 
     print(f"\nGenerated AgentSpec and files at: {agent_dir}")
     print(f"Saved PreSpecSession: {session_path}")
@@ -295,8 +298,13 @@ def _collect_option_inputs(q, value: Any, source: str, session) -> Dict[str, Any
 def cmd_compile_session(args: argparse.Namespace) -> int:
     session = load_session(args.session)
     spec = compile_agentspec(session, agent_name=args.agent_name)
-    agent_dir = generate_agent_files(spec, args.output)
-    (agent_dir / "prespec_session.json").write_text(json.dumps(session.to_dict(), ensure_ascii=False, indent=2), encoding="utf-8")
+    design_card = generate_design_card(session)
+    agent_dir = generate_agent_files(
+        spec,
+        args.output,
+        prespec_session=session.to_dict(),
+        design_card_markdown=design_card.to_markdown(),
+    )
     print(f"Generated: {agent_dir}")
     return 0
 

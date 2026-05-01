@@ -11,7 +11,12 @@ def dump_yaml(data: Dict[str, Any]) -> str:
     return yaml.safe_dump(data, allow_unicode=True, sort_keys=False, indent=2)
 
 
-def generate_agent_files(agent_spec: Dict[str, Any], output_root: Path) -> Path:
+def generate_agent_files(
+    agent_spec: Dict[str, Any],
+    output_root: Path,
+    prespec_session: Dict[str, Any] | None = None,
+    design_card_markdown: str | None = None,
+) -> Path:
     agent_name = agent_spec["agent"]["name"]
     agent_dir = output_root / "agents" / agent_name
     agent_dir.mkdir(parents=True, exist_ok=True)
@@ -27,6 +32,11 @@ def generate_agent_files(agent_spec: Dict[str, Any], output_root: Path) -> Path:
     (agent_dir / "output_schema.json").write_text(json.dumps(_output_schema(agent_spec), ensure_ascii=False, indent=2), encoding="utf-8")
     (agent_dir / "system_prompt.md").write_text(_system_prompt(agent_spec), encoding="utf-8")
     (agent_dir / "runbook.md").write_text(_runbook(agent_spec), encoding="utf-8")
+    (agent_dir / "prespec_session.json").write_text(
+        json.dumps(prespec_session or {"source": agent_spec.get("source", {})}, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    (agent_dir / "agent_design_card.md").write_text(design_card_markdown or _design_card_placeholder(agent_spec), encoding="utf-8")
 
     if agent_spec["agent"]["type"] == "review-agent":
         (agent_dir / "learned_rules.md").write_text(_initial_review_rules(agent_spec), encoding="utf-8")
@@ -71,6 +81,22 @@ def _system_prompt(spec: Dict[str, Any]) -> str:
     ]
     for tool, policy in spec.get("tool_policy", {}).items():
         lines.append(f"- `{tool}`: permission=`{policy.get('permission')}`, risk=`{policy.get('risk', '')}`")
+    lines.extend(
+        [
+            "",
+            "## 权限和反馈边界",
+            "",
+            "- `allow` 只能用于低风险或用户明确确认过的自动动作。",
+            "- `ask` 必须暂停并生成审批请求，不能自行继续执行。",
+            "- `deny` 必须直接拒绝并说明原因。",
+            "- Rule Patch / Style Patch 只能作为候选补丁，等待用户审批。",
+            "",
+            "## 反馈规则",
+            "",
+        ]
+    )
+    for key, value in spec.get("human_feedback", {}).items():
+        lines.append(f"- `{key}`: {value}")
     lines.extend(["", "## 输出要求", ""])
     for artifact in spec.get("output", {}).get("artifacts", []):
         lines.append(f"- {artifact}")
@@ -103,10 +129,35 @@ def _runbook(spec: Dict[str, Any]) -> str:
         steps = ["理解用户任务", "生成计划", "执行低风险步骤", "关键动作前确认", "输出结果和反馈请求"]
     lines = [f"# Runbook: {spec['agent']['name']}", "", "## 标准流程", ""]
     lines.extend([f"{i}. {s}" for i, s in enumerate(steps, start=1)])
+    lines.extend(["", "## 暂停点", ""])
+    for tool, policy in spec.get("tool_policy", {}).items():
+        if policy.get("permission") == "ask":
+            lines.append(f"- `{tool}`: 暂停并请求审批，风险 `{policy.get('risk')}`。")
+        elif policy.get("permission") == "deny":
+            lines.append(f"- `{tool}`: 禁止执行，风险 `{policy.get('risk')}`。")
     lines.extend(["", "## 人类检查点", ""])
     for key, value in spec.get("human_feedback", {}).items():
         lines.append(f"- `{key}`: {value}")
     return "\n".join(lines) + "\n"
+
+
+def _design_card_placeholder(spec: Dict[str, Any]) -> str:
+    source = spec.get("source", {})
+    return "\n".join(
+        [
+            f"# Agent Design Card: {spec['agent']['name']}",
+            "",
+            "## 已确认",
+            "",
+            f"- Agent 类型：{spec['agent']['type']}",
+            f"- 用户目标：{source.get('user_goal', '')}",
+            "",
+            "## 待确认",
+            "",
+            "- 运行时使用前请复核 tool_policy、human_feedback 和 memory_policy。",
+            "",
+        ]
+    )
 
 
 def _output_schema(spec: Dict[str, Any]) -> Dict[str, Any]:

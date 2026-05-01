@@ -133,8 +133,12 @@ human_feedback.yaml
 memory_policy.yaml
 eval_rubric.yaml
 output_schema.json
+prespec_session.json
+agent_design_card.md
 examples/
 ```
+
+当前生成器保证上述稳定文件集都会落盘；`tool_policy.yaml`、`human_feedback.yaml`、`memory_policy.yaml`、`eval_rubric.yaml` 均来自同一个 `AgentSpec`，不得与 `agent.yaml` 中对应字段分叉。
 
 完成标准：
 
