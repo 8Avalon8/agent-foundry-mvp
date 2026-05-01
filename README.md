@@ -156,6 +156,23 @@ python3 -m agent_foundry.cli new "我想做一个 SVN Review Agent，帮我审�
   --output ./workspace
 ```
 
+### 交互式创建和续跑
+
+```bash
+python3 -m agent_foundry.cli new "我想做一个 SVN Review Agent，帮我审查 diff" \
+  --interactive \
+  --output ./workspace
+```
+
+交互输入支持 `question=value`、选项序号和多选逗号分隔。每个阶段确认后会保存 session；之后可以从保存点继续：
+
+```bash
+python3 -m agent_foundry.cli new \
+  --session ./workspace/.agent_foundry_sessions/session_xxx.json \
+  --interactive \
+  --output ./workspace
+```
+
 ### OpenAI 创建 Agent
 
 ```bash
