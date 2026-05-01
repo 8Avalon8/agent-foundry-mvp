@@ -28,6 +28,7 @@ from agent_foundry.runtime.memory_engine import ALLOWED_REVIEW_LABELS, propose_m
 from agent_foundry.runtime.permission_engine import check_permission
 from agent_foundry.runtime.dry_run import load_agent_spec
 from agent_foundry.renderers.a2ui_renderer import board_to_a2ui_tree
+from agent_foundry.renderers.action_protocol import apply_action_event
 from agent_foundry.renderers.web_renderer import board_to_web_view_model, render_web_html
 
 
@@ -129,6 +130,11 @@ def build_parser() -> argparse.ArgumentParser:
     p_permission.add_argument("agent_dir", type=Path)
     p_permission.add_argument("tool")
     p_permission.add_argument("--payload-json", default="{}", help="Optional JSON payload for the approval request")
+
+    p_action = sub.add_parser("apply-action", help="Apply a UI action event to a saved PreSpecSession")
+    p_action.add_argument("session", type=Path)
+    p_action.add_argument("event_json", help="Action event JSON string")
+    p_action.add_argument("--output", type=Path, help="Optional output session path. Defaults to overwrite input session.")
 
     return parser
 
@@ -416,6 +422,19 @@ def cmd_permission_check(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_apply_action(args: argparse.Namespace) -> int:
+    session = load_session(args.session)
+    try:
+        event = json.loads(args.event_json)
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"event_json must be valid JSON: {exc}") from exc
+    result = apply_action_event(session, event)
+    if result.status == "accepted":
+        save_session(session, args.output or args.session)
+    print(json.dumps(result.to_dict(), ensure_ascii=False, indent=2))
+    return 0
+
+
 def _resolve_topic_selection(topics: List[str], raw: str) -> str:
     if raw.isdigit():
         index = int(raw) - 1
@@ -456,6 +475,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         return cmd_writing_feedback(args)
     if args.command == "permission-check":
         return cmd_permission_check(args)
+    if args.command == "apply-action":
+        return cmd_apply_action(args)
     parser.print_help()
     return 2
 

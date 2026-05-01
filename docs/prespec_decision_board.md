@@ -92,6 +92,37 @@ A2UI 输出包含：
 
 可以通过 `agent-foundry board ... --format a2ui-json` 导出。
 
+## Action Protocol
+
+UI 层通过 action event 回传用户操作，后端将事件应用到 `PreSpecSession`：
+
+```json
+{
+  "action": "select_option",
+  "session_id": "session_xxx",
+  "payload": {
+    "question_id": "run_tests",
+    "value": "ask"
+  }
+}
+```
+
+当前 action：
+
+- `select_option`
+- `update_text`
+- `confirm_stage`
+- `save_draft`
+- `show_impact`
+- `request_approval`
+
+协议约束：
+
+- 非法选项、缺少 required input、stage 不匹配会返回 `rejected`，不会污染 session。
+- `show_impact` 和 `request_approval` 是只读事件，不改变 session。
+- `confirm_stage` 只有当前阶段必填问题都已回答时才会推进阶段。
+- CLI 可用 `agent-foundry apply-action <session.json> '<event-json>'` 回放事件。
+
 ## 分阶段决策图
 
 ### Stage 1：基础目标确认

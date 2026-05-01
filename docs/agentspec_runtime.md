@@ -251,6 +251,22 @@ approval_request:
     - add_to_whitelist
 ```
 
+## UI Action Event
+
+Pre-Spec UI 不直接改 AgentSpec，也不绕过权限。它只能把用户操作作为 action event 回放到
+`PreSpecSession`，再由 compiler / permission engine 重新计算后续状态。
+
+事件 schema 位于 `agent_foundry/schemas/action_event.schema.json`。当前支持：
+
+- `select_option`
+- `update_text`
+- `confirm_stage`
+- `save_draft`
+- `show_impact`
+- `request_approval`
+
+非法 action 返回 `rejected`，不会污染 session；需要审批的 action 返回 `requires_approval`。
+
 ## Human Feedback Engine
 
 Human Feedback Engine 负责把 Agent 的问题转成标准反馈组件。

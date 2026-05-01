@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AgentFoundryActionEvent",
+  "type": "object",
+  "required": ["action", "session_id", "payload"],
+  "additionalProperties": false,
+  "properties": {
+    "action": {
+      "enum": [
+        "select_option",
+        "update_text",
+        "confirm_stage",
+        "save_draft",
+        "show_impact",
+        "request_approval"
+      ]
+    },
+    "session_id": {"type": "string"},
+    "payload": {"type": "object"}
+  }
+}
