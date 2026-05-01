@@ -112,6 +112,60 @@ eval:
     - user_revision_count
 ```
 
+Research Agent 输出约定：
+
+```yaml
+agent:
+  type: research-agent
+tools:
+  required_capabilities:
+    - search_public_web
+    - read_public_pages
+    - extract_evidence
+    - generate_markdown
+    - export_structured_sources
+tool_policy:
+  web.search:
+    permission: allow
+    scope: public_web
+    risk: low_to_medium
+  web.fetch_public:
+    permission: allow
+    scope: public_web
+    risk: low_to_medium
+  browser.login:
+    permission: deny
+    risk: high
+  captcha.solve:
+    permission: deny
+    risk: high
+  forms.submit:
+    permission: deny
+    risk: high
+output:
+  artifacts:
+    - report.md
+    - sources.json
+    - research_plan.md
+    - feedback_requests.json
+```
+
+`sources.json` 必须保留 `source_url`、`source_title`、`retrieved_at`、`evidence_snippet`、`source_type`、`confidence` 和 `inference_note`，用于复核报告里的事实来源。
+
+真实 Research run 的输出比 dry run 更重。除上述核心产物外，真实运行必须额外生成：
+
+```text
+evidence_matrix.json
+run_log.json
+raw_notes/
+```
+
+- `evidence_matrix.json`：把每个报告结论映射到 `sources.json` 中的来源、证据片段、置信度和推断说明。
+- `run_log.json`：记录检索词、抓取时间、权限决策、失败原因、跳过原因和人工确认点。
+- `raw_notes/`：保存从公开页面抽取后的网页笔记或引用摘要，不默认保存整页内容。
+
+当前 MVP 只实现 deterministic / LLM dry run。真实网页抓取、真实 Research run 和长期后台运行仍是后续范围。
+
 ## Compiler
 
 Compiler 的职责是把 AgentSpec 编译成工程文件。
@@ -189,6 +243,19 @@ agents/
     examples/
     style_rules.md
     runs/
+  research-agent/
+    agent.yaml
+    system_prompt.md
+    runbook.md
+    tool_policy.yaml
+    human_feedback.yaml
+    memory_policy.yaml
+    eval_rubric.yaml
+    output_schema.json
+    examples/
+      sample_input.txt
+      sample_report.md
+    runs/
 ```
 
 ## Runtime Harness
@@ -204,7 +271,7 @@ agents/
 7. 记录用户反馈。
 8. 生成 rule patch 建议。
 
-第一版可以先支持 deterministic dry run 和 LLM dry run，不急着接真实 SVN、真实 shell 或后台服务。
+第一版支持 deterministic dry run 和 LLM dry run。Review / Writing / Research Agent 都会生成声明的 dry run 产物；Research dry run 不执行真实网页访问，只模拟研究计划、报告、来源字段和反馈请求。不急着接真实 SVN、真实 shell、真实网页抓取或后台服务。
 
 ## Permission Engine
 

@@ -49,7 +49,7 @@
   -> Rule Patch / Style Patch 候选
 ```
 
-可用命令和验收矩阵见根目录 [README.md](../README.md) 与 [PROJECT_STATUS.md](../PROJECT_STATUS.md)。规划文档中 T0-T16、Conversation Orchestrator / Runtime API 和内置 Web Builder 是当前 MVP 收束范围；Web / A2UI 已落到声明式 renderer、action protocol、每轮 A2UI response、可交互网页和 UI demo，尚不包含真实 A2UI SDK 集成或 hosted deployment。
+可用命令和验收矩阵见根目录 [README.md](../README.md) 与 [PROJECT_STATUS.md](../PROJECT_STATUS.md)。规划文档中 T0-T16、Conversation Orchestrator / Runtime API 和内置 Web Builder 是当前 MVP 收束范围；Web / A2UI 已落到声明式 renderer、action protocol、每轮 A2UI response、可交互网页和 UI demo，Research Agent 已落到 compile 和 dry run 产物。当前尚不包含真实 A2UI SDK 集成、真实网页抓取或 hosted deployment。
 
 ## Source of Truth
 

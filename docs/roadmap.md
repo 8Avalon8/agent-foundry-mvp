@@ -251,6 +251,21 @@ output_schema.json
 
 当前状态：已支持 writing-agent dry run、3-5 个选题、选题选择、发布包和 `style_rule_patch.md` 候选生成；不会自动写入长期风格规则。
 
+### Milestone 11：Research Agent MVP
+
+目标：验证资料整理和竞品研究型 Agent。
+
+完成标准：
+
+1. 输入一条调研需求。
+2. 输出 `research_plan.md`。
+3. 输出 `report.md`。
+4. 输出带来源字段的 `sources.json`。
+5. 输出 `feedback_requests.json`。
+6. 权限策略禁止登录、验证码、表单提交和外部发布。
+
+当前状态：已支持 research-agent compile 和 dry run 产物；真实网页抓取尚未实现。真实 Research run 协议要求额外生成 `evidence_matrix.json`、`run_log.json` 和 `raw_notes/`，用于审计来源、运行轨迹和抽取笔记。
+
 ## 五个小迭代
 
 ### Iteration 1：协议和模型
@@ -310,7 +325,7 @@ output_schema.json
 
 ## 下一步建议
 
-当前 T0-T16 MVP 已进入验收收口；下一步优先做全量端到端命令验证和生成物检查。真实 Web UI runtime、真实 A2UI runtime、真实 SVN 调用和真实公众号发布仍在 MVP 边界外。
+当前 T0-T16 MVP 已进入验收收口；下一步优先做全量端到端命令验证和生成物检查。真实 Web UI runtime、真实 A2UI runtime、真实 SVN 调用、真实公众号发布和真实网页抓取仍在 MVP 边界外。
 
 ## 第一版暂不做
 

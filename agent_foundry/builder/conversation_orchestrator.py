@@ -15,6 +15,7 @@ from .decision_board import (
     generate_design_card,
     save_session,
 )
+from .decision_graph import get_stage_order
 from .file_generator import generate_agent_files
 from .llm_builder import apply_natural_language_update, create_session_with_llm
 from .models import DecisionQuestion, PreSpecSession
@@ -88,6 +89,7 @@ def handle_user_reply(
     if _accepts_all_recommended(reply):
         before = set(session.decisions)
         apply_recommended_defaults(session, include_all_stages=True)
+        session.metadata["confirmed_stages"] = get_stage_order(session.inferred_agent_type)
         applied_updates.extend({"question_id": key, "source": "recommended_accepted"} for key in sorted(set(session.decisions) - before))
     else:
         question = next_question(session)
@@ -116,6 +118,14 @@ def handle_user_reply(
             message=_question_prompt(question),
             session=session,
             next_question=question,
+            events=events,
+            applied_updates=applied_updates,
+        )
+    if _awaiting_stage_confirmation(session):
+        return ConversationResult(
+            status="awaiting_confirmation",
+            message="本阶段的必填项已经选完，请确认本阶段后再进入下一阶段。",
+            session=session,
             events=events,
             applied_updates=applied_updates,
         )
@@ -174,6 +184,13 @@ def handle_action_event(
             message=_question_prompt(question),
             session=session,
             next_question=question,
+            events=[result.to_dict()],
+        )
+    if _awaiting_stage_confirmation(session):
+        return ConversationResult(
+            status="awaiting_confirmation",
+            message="本阶段的必填项已经选完，请确认本阶段后再进入下一阶段。",
+            session=session,
             events=[result.to_dict()],
         )
     if output_root is None:
@@ -276,8 +293,18 @@ def _advance_past_completed_stages(session: PreSpecSession) -> None:
         missing = [question.id for question in board.questions if question.required and question.id not in session.decisions]
         if missing:
             return
+        if board.questions and session.current_stage not in set(session.metadata.get("confirmed_stages", [])):
+            return
         if not advance_stage(session):
             return
+
+
+def _awaiting_stage_confirmation(session: PreSpecSession) -> bool:
+    board = build_decision_board(session)
+    if not board.questions:
+        return False
+    missing = [question.id for question in board.questions if question.required and question.id not in session.decisions]
+    return not missing and session.current_stage not in set(session.metadata.get("confirmed_stages", []))
 
 
 def _accepts_all_recommended(reply: str) -> bool:

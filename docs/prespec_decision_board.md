@@ -404,6 +404,19 @@ output:
     - style_rule_patch.md
 ```
 
+Research Agent 输出：
+
+```yaml
+output:
+  artifacts:
+    - report.md
+    - sources.json
+    - research_plan.md
+    - feedback_requests.json
+```
+
+真实 Research run 还需要额外生成 `evidence_matrix.json`、`run_log.json` 和 `raw_notes/`，用于复核结论、追踪检索过程和保留抽取笔记。当前 MVP 只承诺 dry run 产物。
+
 ### Stage 7：AgentSpec 生成前 dry run
 
 目标：在真正生成或最终确认 AgentSpec 前，模拟一次运行，让用户看到实际效果。
@@ -423,6 +436,13 @@ SVN Review Agent dry run 输入一段模拟 diff，输出：
 3. 大纲。
 4. 初稿片段。
 5. 发布包预览。
+
+Research Agent dry run 输入一条模拟调研需求，输出：
+
+1. 调研计划。
+2. 带来源字段的报告。
+3. 结构化来源列表。
+4. 待用户确认的问题。
 
 ## 数据模型
 

@@ -23,6 +23,8 @@ def compile_agentspec(session: PreSpecSession, agent_name: str | None = None) ->
         return _compile_review_agent(session, agent_name)
     if session.inferred_agent_type == "writing-agent":
         return _compile_writing_agent(session, agent_name)
+    if session.inferred_agent_type == "research-agent":
+        return _compile_research_agent(session, agent_name)
     return _compile_generic_agent(session, agent_name)
 
 
@@ -250,6 +252,69 @@ def _compile_writing_agent(session: PreSpecSession, agent_name: str | None) -> D
             },
             "output": {"format": "publish_package", "artifacts": artifacts},
             "eval": {"metrics": ["user_edit_distance", "approval_rate", "revision_rounds", "style_match_score"]},
+        }
+    )
+    return spec
+
+
+def _compile_research_agent(session: PreSpecSession, agent_name: str | None) -> Dict[str, Any]:
+    spec = _base(session, agent_name, "research-agent")
+    output_format = _decision(session, "output_format", _decision(session, "main_output", "markdown_report"))
+    autonomy_level = _decision(session, "autonomy_level", "L2")
+    artifacts = ["report.md", "sources.json", "research_plan.md", "feedback_requests.json"]
+    if output_format in {"json_data", "markdown_plus_json"}:
+        artifacts.append("evidence_matrix.json")
+    spec.update(
+        {
+            "goal": {
+                "primary": session.user_goal,
+                "secondary": ["提炼可信资料", "保留来源字段", "明确不确定性和推断边界"],
+            },
+            "lifecycle": {"mode": "on_demand", "trigger": ["manual"]},
+            "autonomy": {
+                "level": autonomy_level,
+                "default_behavior": "read_public_sources_ask_for_external_side_effects",
+            },
+            "inputs": {
+                "required": ["research_request"],
+                "optional": ["preferred_sources", "comparison_dimensions", "known_constraints"],
+            },
+            "tools": {
+                "required_capabilities": [
+                    "search_public_web",
+                    "read_public_pages",
+                    "extract_evidence",
+                    "generate_markdown",
+                    "export_structured_sources",
+                    "ask_user",
+                ]
+            },
+            "tool_policy": {
+                "web.search": {"permission": "allow", "scope": "public_web", "risk": "low_to_medium"},
+                "web.fetch_public": {"permission": "allow", "scope": "public_web", "risk": "low_to_medium"},
+                "browser.login": {"permission": "deny", "risk": "high"},
+                "captcha.solve": {"permission": "deny", "risk": "high"},
+                "forms.submit": {"permission": "deny", "risk": "high"},
+                "external_publish": {"permission": "deny", "risk": "critical"},
+                "memory.update": {"permission": "ask", "risk": "medium"},
+            },
+            "human_feedback": {
+                "research_plan_review": {"mode": "approval", "when": "scope_or_sources_unclear"},
+                "source_quality_feedback": {
+                    "mode": "structured_labels",
+                    "options": ["accepted", "stale", "weak_source", "needs_more_evidence", "irrelevant"],
+                },
+                "before_sensitive_action": {"mode": "risk_card_with_reason"},
+            },
+            "memory": {
+                "short_term": ["current_research_request", "candidate_sources", "evidence_notes"],
+                "long_term_candidates": ["trusted_sources", "comparison_dimensions", "user_research_preferences"],
+                "update_policy": "approved_rule_patch",
+                "update_requires_approval": True,
+                "forbidden": ["credentials", "paywalled_private_content", "personal_private_data"],
+            },
+            "output": {"format": output_format, "artifacts": artifacts},
+            "eval": {"metrics": ["source_coverage", "evidence_traceability", "uncertainty_clarity", "user_acceptance"]},
         }
     )
     return spec

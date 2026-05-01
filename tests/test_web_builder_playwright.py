@@ -59,12 +59,19 @@ class WebBuilderPlaywrightTest(unittest.TestCase):
                     self.assertEqual(page.locator(".board input:checked").evaluate_all("(nodes) => nodes.map((node) => node.value)"), ["scheduled"])
 
                     page.get_by_text("安全风险", exact=True).click()
+                    expect(page.locator("#sessionStatus")).to_contain_text("awaiting_confirmation")
+                    expect(page.get_by_role("heading", name="自治程度应该设为哪一档？")).not_to_be_visible()
+                    page.get_by_role("button", name="确认本阶段").click()
                     expect(page.get_by_role("heading", name="自治程度应该设为哪一档？")).to_be_visible()
 
                     for _ in range(8):
                         if "completed" in page.locator("#sessionStatus").inner_text():
                             break
-                        page.get_by_role("button", name="采用推荐").first.click()
+                        page.get_by_role("button", name="采用推荐").click()
+                        page.wait_for_timeout(250)
+                        if "completed" in page.locator("#sessionStatus").inner_text():
+                            break
+                        page.get_by_role("button", name="确认本阶段").click()
                         page.wait_for_timeout(250)
 
                     expect(page.locator("#sessionStatus")).to_contain_text("completed")

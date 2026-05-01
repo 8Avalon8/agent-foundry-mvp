@@ -59,6 +59,19 @@ def dry_run(
                     encoding="utf-8",
                 )
         return run_writing_dry_run(spec, material, run_dir)
+    if agent_type == "research-agent":
+        if sample_input is None:
+            sample_input = agent_dir / "examples" / "sample_input.txt"
+        request = sample_input.read_text(encoding="utf-8")
+        if provider is not None:
+            try:
+                return run_research_dry_run_llm(spec, request, run_dir, provider)
+            except Exception as exc:
+                (run_dir / "llm_fallback_note.md").write_text(
+                    f"# LLM Dry Run Fallback\n\nLLM dry run failed, used deterministic fallback.\n\n```text\n{exc}\n```\n",
+                    encoding="utf-8",
+                )
+        return run_research_dry_run(spec, request, run_dir)
     (run_dir / "result.md").write_text("# Dry Run\n\nGeneric agent dry run is not implemented yet.\n", encoding="utf-8")
     return run_dir
 
@@ -116,7 +129,48 @@ WRITING_DRY_RUN_SCHEMA: Dict[str, Any] = {
 }
 
 
-LLM_DRY_RUN_SYSTEM = """你是 Agent Foundry 的 dry-run 执行器。你会根据 AgentSpec 和示例输入，生成一次模拟运行结果。\n\n要求：\n- 只输出符合 JSON Schema 的对象。\n- 不能执行真实工具、shell、网络或发布动作。\n- 必须体现 AgentSpec 里的权限、人类反馈和记忆更新策略。\n- Review finding 必须包含证据、建议、置信度和反馈标签。\n- Rule Patch / Style Patch 只能是候选，必须标注需要用户审批。\n"""
+RESEARCH_DRY_RUN_SCHEMA: Dict[str, Any] = {
+    "type": "object",
+    "additionalProperties": False,
+    "required": ["report_markdown", "research_plan", "sources", "feedback_requests"],
+    "properties": {
+        "report_markdown": {"type": "string"},
+        "research_plan": {"type": "array", "items": {"type": "string"}},
+        "sources": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["source_url", "source_title", "retrieved_at", "evidence_snippet", "source_type", "confidence", "inference_note"],
+                "properties": {
+                    "source_url": {"type": "string"},
+                    "source_title": {"type": "string"},
+                    "retrieved_at": {"type": "string"},
+                    "evidence_snippet": {"type": "string"},
+                    "source_type": {"type": "string"},
+                    "confidence": {"type": "number"},
+                    "inference_note": {"type": "string"},
+                },
+            },
+        },
+        "feedback_requests": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["id", "question", "options"],
+                "properties": {
+                    "id": {"type": "string"},
+                    "question": {"type": "string"},
+                    "options": {"type": "array", "items": {"type": "string"}},
+                },
+            },
+        },
+    },
+}
+
+
+LLM_DRY_RUN_SYSTEM = """你是 Agent Foundry 的 dry-run 执行器。你会根据 AgentSpec 和示例输入，生成一次模拟运行结果。\n\n要求：\n- 只输出符合 JSON Schema 的对象。\n- 不能执行真实工具、shell、网络或发布动作。\n- 必须体现 AgentSpec 里的权限、人类反馈和记忆更新策略。\n- Review finding 必须包含证据、建议、置信度和反馈标签。\n- Research 报告必须保留 source_url、source_title、retrieved_at、evidence_snippet、source_type、confidence 和 inference_note。\n- Rule Patch / Style Patch 只能是候选，必须标注需要用户审批。\n"""
 
 
 def run_review_dry_run_llm(spec: Dict[str, Any], diff_text: str, run_dir: Path, provider: Any) -> Path:
@@ -177,6 +231,31 @@ def run_writing_dry_run_llm(spec: Dict[str, Any], material: str, run_dir: Path, 
         encoding="utf-8",
     )
     (run_dir / "style_rule_patch.md").write_text(result.get("style_rule_patch_markdown", "# Style Rule Patch Proposal\n"), encoding="utf-8")
+    (run_dir / "llm_dry_run_metadata.json").write_text(
+        json.dumps({"provider": getattr(provider, "name", "unknown"), "mode": "llm"}, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    return run_dir
+
+
+def run_research_dry_run_llm(spec: Dict[str, Any], request: str, run_dir: Path, provider: Any) -> Path:
+    prompt = json.dumps({"agent_spec": spec, "research_request": request}, ensure_ascii=False, indent=2)
+    result = provider.complete_json(
+        system_prompt=LLM_DRY_RUN_SYSTEM,
+        user_prompt=prompt,
+        schema=RESEARCH_DRY_RUN_SCHEMA,
+        schema_name="research_dry_run",
+        temperature=0.2,
+    )
+    sources = result.get("sources", [])
+    plan = result.get("research_plan", [])
+    feedback = result.get("feedback_requests", [])
+    (run_dir / "report.md").write_text(result.get("report_markdown", "# Research Report\n"), encoding="utf-8")
+    (run_dir / "research_plan.md").write_text("# Research Plan\n\n" + "\n".join(f"- {x}" for x in plan) + "\n", encoding="utf-8")
+    (run_dir / "sources.json").write_text(json.dumps(sources, ensure_ascii=False, indent=2), encoding="utf-8")
+    (run_dir / "feedback_requests.json").write_text(json.dumps(feedback, ensure_ascii=False, indent=2), encoding="utf-8")
+    if "evidence_matrix.json" in spec.get("output", {}).get("artifacts", []):
+        (run_dir / "evidence_matrix.json").write_text(json.dumps({"sources": sources}, ensure_ascii=False, indent=2), encoding="utf-8")
     (run_dir / "llm_dry_run_metadata.json").write_text(
         json.dumps({"provider": getattr(provider, "name", "unknown"), "mode": "llm"}, ensure_ascii=False, indent=2),
         encoding="utf-8",
@@ -343,6 +422,103 @@ def propose_rule_patch(findings: List[Dict[str, Any]]) -> str:
     if len(lines) <= 4:
         lines.append("本次 dry run 暂未生成具体规则补丁。\n")
     return "\n".join(lines)
+
+
+def run_research_dry_run(spec: Dict[str, Any], request: str, run_dir: Path) -> Path:
+    request = request.strip() or spec.get("goal", {}).get("primary", "研究请求")
+    targets = _infer_research_targets(request)
+    plan = [
+        "确认比较对象和研究维度。",
+        "优先读取官方公开页面、价格页和帮助文档。",
+        "为每条结论记录来源字段和证据片段。",
+        "遇到登录墙、验证码、付费墙或访问限制时停止并标注。",
+        "输出对比报告和结构化来源清单。",
+    ]
+    sources = [
+        {
+            "source_url": f"https://example.com/{_slug_for_source(target)}",
+            "source_title": f"{target} official public page placeholder",
+            "retrieved_at": datetime.now().strftime("%Y-%m-%d"),
+            "evidence_snippet": f"Dry run placeholder for public evidence about {target}.",
+            "source_type": "official_public_page_placeholder",
+            "confidence": 0.4,
+            "inference_note": "Deterministic dry run did not access the network; replace with real public sources during execution.",
+        }
+        for target in targets
+    ]
+    feedback = [
+        {
+            "id": "RQ001",
+            "question": "这些来源字段是否足够支撑你复核报告？",
+            "options": ["accepted", "needs_more_evidence", "weak_source", "irrelevant"],
+        },
+        {
+            "id": "RQ002",
+            "question": "比较维度是否覆盖你的研究目标？",
+            "options": ["accepted", "missing_dimension", "too_broad", "too_shallow"],
+        },
+    ]
+    report = render_research_report(spec, request, targets, sources)
+    (run_dir / "report.md").write_text(report, encoding="utf-8")
+    (run_dir / "research_plan.md").write_text("# Research Plan\n\n" + "\n".join(f"- {x}" for x in plan) + "\n", encoding="utf-8")
+    (run_dir / "sources.json").write_text(json.dumps(sources, ensure_ascii=False, indent=2), encoding="utf-8")
+    (run_dir / "feedback_requests.json").write_text(json.dumps(feedback, ensure_ascii=False, indent=2), encoding="utf-8")
+    if "evidence_matrix.json" in spec.get("output", {}).get("artifacts", []):
+        (run_dir / "evidence_matrix.json").write_text(json.dumps({"sources": sources}, ensure_ascii=False, indent=2), encoding="utf-8")
+    return run_dir
+
+
+def render_research_report(spec: Dict[str, Any], request: str, targets: List[str], sources: List[Dict[str, Any]]) -> str:
+    lines = [
+        f"# Dry Run Research Report: {spec['agent']['name']}",
+        "",
+        "## Request",
+        "",
+        request,
+        "",
+        "## Scope",
+        "",
+        "- 本次 dry run 不访问真实网络，只验证研究流程、输出结构和权限边界。",
+        "- 真实运行时只读取公开页面；登录、验证码、提交表单和外部发布均不会自动执行。",
+        "",
+        "## Comparison Draft",
+        "",
+        "| Product | Positioning | Target Users | Core Functions | Pricing Entry | Evidence |",
+        "| --- | --- | --- | --- | --- | --- |",
+    ]
+    for target, source in zip(targets, sources):
+        lines.append(
+            f"| {target} | 待从官方公开页面提取 | 待从官方文案谨慎推断 | 待从产品页和帮助文档提取 | 待记录价格入口 URL | {source['source_url']} |"
+        )
+    lines.extend(
+        [
+            "",
+            "## Source Contract",
+            "",
+            "每条事实结论都必须能回到 `sources.json` 中的来源字段：`source_url`、`source_title`、`retrieved_at`、`evidence_snippet`、`source_type`、`confidence`、`inference_note`。",
+            "",
+            "## Open Questions",
+            "",
+            "- 是否只接受官方来源，还是允许第三方评测补充？",
+            "- 价格信息是只记录入口，还是需要人工确认后整理具体套餐？",
+        ]
+    )
+    return "\n".join(lines) + "\n"
+
+
+def _infer_research_targets(request: str) -> List[str]:
+    candidates = re.split(r"[、,，/和与\s]+", request)
+    targets = []
+    for item in candidates:
+        cleaned = item.strip("：:；;。,. ")
+        if cleaned and re.search(r"[A-Za-z]", cleaned) and cleaned.lower() not in {"agent", "url"}:
+            targets.append(cleaned)
+    return targets[:5] or ["Target A", "Target B", "Target C"]
+
+
+def _slug_for_source(value: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
+    return slug or "source"
 
 
 def run_writing_dry_run(spec: Dict[str, Any], material: str, run_dir: Path) -> Path:

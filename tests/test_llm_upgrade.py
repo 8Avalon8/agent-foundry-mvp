@@ -45,6 +45,28 @@ class LLMUpgradeTest(unittest.TestCase):
             metadata = json.loads((run_dir / "llm_dry_run_metadata.json").read_text(encoding="utf-8"))
             self.assertEqual(metadata["mode"], "llm")
 
+    def test_research_agent_compile_and_dry_run_outputs_declared_artifacts(self) -> None:
+        provider = MockLLMProvider()
+        session = create_session_with_llm(
+            "我想做一个竞品研究 Agent，比较 Notion、飞书多维表格、Airtable 的官网定位和价格入口",
+            provider=provider,
+            explicit_type="research-agent",
+        )
+        apply_recommended_defaults(session, include_all_stages=True)
+        spec = compile_agentspec(session)
+        self.assertEqual(spec["agent"]["type"], "research-agent")
+        self.assertIn("report.md", spec["output"]["artifacts"])
+        self.assertIn("sources.json", spec["output"]["artifacts"])
+        with tempfile.TemporaryDirectory() as tmp:
+            agent_dir = generate_agent_files(spec, Path(tmp), prespec_session=session.to_dict())
+            run_dir = dry_run(agent_dir, provider=provider)
+            for artifact in spec["output"]["artifacts"]:
+                self.assertTrue((run_dir / artifact).exists(), artifact)
+            sources = json.loads((run_dir / "sources.json").read_text(encoding="utf-8"))
+            self.assertIn("source_url", sources[0])
+            metadata = json.loads((run_dir / "llm_dry_run_metadata.json").read_text(encoding="utf-8"))
+            self.assertEqual(metadata["mode"], "llm")
+
     def test_natural_language_update(self) -> None:
         provider = MockLLMProvider()
         session = create_session_with_llm("我想做一个 SVN Review Agent", provider=provider)
@@ -75,6 +97,40 @@ class LLMUpgradeTest(unittest.TestCase):
         self.assertEqual(provider.model, "test-model")
         self.assertEqual(captured["api_key"], "test-key")
         self.assertEqual(captured["base_url"], "https://gateway.example/v1")
+
+    def test_openai_provider_loads_dotenv_from_current_checkout(self) -> None:
+        captured = {}
+
+        class FakeOpenAI:
+            def __init__(self, **kwargs) -> None:
+                captured.update(kwargs)
+
+        fake_openai_module = SimpleNamespace(OpenAI=FakeOpenAI)
+        with tempfile.TemporaryDirectory() as tmp:
+            dotenv = Path(tmp) / ".env"
+            dotenv.write_text(
+                "\n".join(
+                    [
+                        "OPENAI_API_KEY=dotenv-key",
+                        "OPENAI_BASE_URL=https://dotenv.example/v1",
+                        "AGENT_FOUNDRY_OPENAI_MODEL=dotenv-model",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            previous_cwd = Path.cwd()
+            try:
+                os.chdir(tmp)
+                with patch.dict(sys.modules, {"openai": fake_openai_module}):
+                    with patch.dict(os.environ, {}, clear=True):
+                        provider = provider_from_name("openai")
+            finally:
+                os.chdir(previous_cwd)
+
+        self.assertIsNotNone(provider)
+        self.assertEqual(provider.model, "dotenv-model")
+        self.assertEqual(captured["api_key"], "dotenv-key")
+        self.assertEqual(captured["base_url"], "https://dotenv.example/v1")
 
     def test_decision_question_accepts_type_alias_and_writes_both_names(self) -> None:
         question = DecisionQuestion.from_dict(

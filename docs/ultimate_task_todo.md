@@ -397,8 +397,9 @@ examples/
 1. 运行全部单测。
 2. mock provider 跑通 review-agent 创建和 dry run。
 3. mock provider 跑通 writing-agent 创建和 dry run。
-4. OpenAI provider 至少完成配置初始化测试。
-5. 检查 git 状态，确认没有提交生成物。
+4. mock provider 跑通 research-agent 创建和 dry run。
+5. OpenAI provider 至少完成配置初始化测试。
+6. 检查 git 状态，确认没有提交生成物。
 
 验收命令：
 
@@ -407,6 +408,7 @@ python3 -m unittest discover -s tests -v
 python3 -m agent_foundry.cli board "我想做一个 SVN Review Agent" --llm-provider mock --stage feedback_protocol --format cli
 python3 -m agent_foundry.cli new "我想做一个 SVN Review Agent，帮我审查 diff" --llm-provider mock --accept-recommended --dry-run --output ./workspace
 python3 -m agent_foundry.cli new "我想做一个微信公众号写作 Agent，帮我把素材变成文章" --llm-provider mock --accept-recommended --dry-run --output ./workspace
+python3 -m agent_foundry.cli new "我想做一个竞品研究 Agent，比较 Notion、飞书多维表格、Airtable" --type research-agent --llm-provider mock --accept-recommended --dry-run --output ./workspace
 git status --short --branch
 ```
 
@@ -414,6 +416,8 @@ git status --short --branch
 
 - SVN Review Agent：`review_report.md`、`findings.json`、`test_suggestions.md`、`feedback_requests.json`、`rule_patch_proposal.md`。
 - Writing Agent：`topic_options.md`、`topic_options.json`、`topic_selection_request.json`、`outline.md`、`article.md`、`publish_package.json`、`style_rule_patch.md`。
+- Research Agent dry run：`report.md`、`sources.json`、`research_plan.md`、`feedback_requests.json`。
+- Research Agent real run 协议：额外生成 `evidence_matrix.json`、`run_log.json` 和 `raw_notes/`；真实网页抓取仍在后续范围。
 - 文档：source of truth 与当前实现状态一致。
 - 权限：高风险动作没有静默 `allow`。
 
@@ -421,7 +425,7 @@ git status --short --branch
 
 - T0-T10 已完成代码收束，并由单测覆盖 provider、schema、Decision Graph、CLI interactive、Impact Preview、Design Card、AgentSpec 安全默认值、文件生成、review feedback、writing feedback 和 Permission Engine。
 - T11 文档同步范围：`README.md`、`PROJECT_STATUS.md`、`docs/index.md`、`docs/roadmap.md`、`docs/prespec_decision_board.md`、`docs/agentspec_runtime.md` 与本文件保持 source of truth 一致。
-- T12 已于 2026-05-01 通过端到端验收：37 条单测通过，mock board / review dry run / writing dry run 通过，`permission_checks.json` 中没有 high / critical 静默 `allow`，`workspace/` 仅作为 ignored 生成物存在。
+- T12 已于 2026-05-01 通过端到端验收：61 条单测通过，mock board / review dry run / writing dry run / research dry run 通过，`permission_checks.json` 中没有 high / critical 静默 `allow`，`workspace/` 仅作为 ignored 生成物存在。
 - T13-T16 已落地到第二阶段 MVP 边界：Web renderer、A2UI-compatible renderer、component catalog / action protocol、UI E2E demo。真实托管 Web UI runtime 和真实 A2UI runtime 集成仍在后续范围。
 
 ### T13：Web Renderer

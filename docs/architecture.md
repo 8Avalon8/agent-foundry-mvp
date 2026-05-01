@@ -186,6 +186,8 @@ Runtime Harness 的 MVP 职责：
 7. 记录用户反馈。
 8. 生成 rule patch 建议。
 
+Research Agent 的 dry run 只模拟研究计划、报告、来源字段和反馈请求；真实 Research run 需要额外生成 `evidence_matrix.json`、`run_log.json` 和 `raw_notes/`。真实网页抓取不在当前 MVP Runtime Harness 范围内。
+
 ## LLM 与确定性代码分工
 
 LLM 负责：

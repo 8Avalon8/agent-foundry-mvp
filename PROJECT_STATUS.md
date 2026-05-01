@@ -11,7 +11,7 @@
 - Added LLM-backed Pre-Spec design brief.
 - Added LLM-generated dynamic decision questions.
 - Added natural-language session update command.
-- Added LLM dry run for review-agent and writing-agent.
+- Added LLM dry run for review-agent, writing-agent, and research-agent.
 - Added conditional Decision Graph visibility with `visible_when`.
 - Added interactive CLI stage flow and saved session resume.
 - Added AgentSpec before/after Impact Preview diff.
@@ -72,16 +72,17 @@ The LLM proposes and explains. Deterministic code still compiles and enforces:
 | Mock review board | `python3 -m agent_foundry.cli board "我想做一个 SVN Review Agent" --llm-provider mock --stage feedback_protocol --format cli` | Dynamic question and impact preview render. |
 | Review agent E2E | `python3 -m agent_foundry.cli new "我想做一个 SVN Review Agent，帮我审查 diff" --llm-provider mock --accept-recommended --dry-run --output ./workspace` | `review_report.md`, `findings.json`, `test_suggestions.md`, `feedback_requests.json`, `rule_patch_proposal.md`. |
 | Writing agent E2E | `python3 -m agent_foundry.cli new "我想做一个微信公众号写作 Agent，帮我把素材变成文章" --llm-provider mock --accept-recommended --dry-run --output ./workspace` | `topic_options.md`, `outline.md`, `article.md`, `publish_package.json`, `style_rule_patch.md`. |
+| Research agent E2E | `python3 -m agent_foundry.cli new "我想做一个竞品研究 Agent，比较 Notion、飞书多维表格、Airtable" --type research-agent --llm-provider mock --accept-recommended --dry-run --output ./workspace` | `report.md`, `sources.json`, `research_plan.md`, `feedback_requests.json`; real run protocol also requires `evidence_matrix.json`, `run_log.json`, and `raw_notes/`. |
 | Safety | Inspect generated `agent.yaml` and `permission_checks.json` | No silent high-risk `allow`; memory updates require approval. |
 | Conversation Builder | `python3 -m agent_foundry.cli chat-build "我想做一个 SVN Review Agent，帮我审查 diff" --llm-provider mock --reply "都按推荐" --format a2ui-json --output ./workspace` | Natural-language goal/reply produce Agent files, dry run, and renderable A2UI tree. |
 | Conversation Runtime | `python3 -m agent_foundry.cli serve-conversation --llm-provider mock --output ./workspace/conversation_api` | Web/A2UI clients can call `/conversation/start` and `/conversation/respond`. |
 | Web Builder | `python3 -m agent_foundry.cli serve-web --llm-provider mock --output ./workspace/web_builder` | Built-in Web UI renders A2UI, sends action events, visibly updates right-panel state, and produces Agent files plus dry run. |
 
-Last verified on 2026-05-01: unit tests passed; mock board, review-agent E2E, writing-agent E2E, UI demo E2E, Conversation Builder, Conversation Runtime, Web Builder smoke, Playwright right-panel interaction, and generated permission checks passed.
+Last verified on 2026-05-01: 61 unit tests passed; mock board, review-agent E2E, writing-agent E2E, research-agent E2E, UI demo E2E, Conversation Builder, Conversation Runtime, Web Builder smoke, Playwright right-panel interaction, OpenAI browser research dry run smoke, and generated permission checks passed.
 
 ## Next
 
-T0-T16 plus the Conversation Orchestrator / Runtime API and built-in Web Builder are implemented for the MVP boundary. Remaining future work is real A2UI SDK integration, real SVN commands, real publishing, hosted deployment, and long-running background operation.
+T0-T16 plus the Conversation Orchestrator / Runtime API and built-in Web Builder are implemented for the MVP boundary. Remaining future work is real A2UI SDK integration, real SVN commands, real publishing, real web fetching for Research Agent, hosted deployment, and long-running background operation.
 
 ## Tests
 

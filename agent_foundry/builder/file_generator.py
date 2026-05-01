@@ -46,6 +46,9 @@ def generate_agent_files(
         (agent_dir / "style_rules.md").write_text(_initial_style_rules(agent_spec), encoding="utf-8")
         (agent_dir / "examples" / "sample_material.txt").write_text("今天发现 AI 做 code review 最有价值的不是找 bug，而是逼我显式化规则。\n", encoding="utf-8")
         (agent_dir / "examples" / "sample_publish_package.md").write_text(_sample_publish_package(), encoding="utf-8")
+    elif agent_spec["agent"]["type"] == "research-agent":
+        (agent_dir / "examples" / "sample_input.txt").write_text(agent_spec.get("source", {}).get("user_goal", "sample research task"), encoding="utf-8")
+        (agent_dir / "examples" / "sample_report.md").write_text(_sample_research_report(), encoding="utf-8")
     else:
         (agent_dir / "examples" / "sample_input.txt").write_text(agent_spec.get("source", {}).get("user_goal", "sample task"), encoding="utf-8")
 
@@ -125,6 +128,16 @@ def _runbook(spec: Dict[str, Any]) -> str:
             "根据反馈修改，生成发布包。",
             "提出 style_rule_patch.md，等待审批后写入 style_rules.md。",
         ]
+    elif t == "research-agent":
+        steps = [
+            "确认研究目标、比较对象、维度和输出格式。",
+            "制定 research_plan.md，列出检索范围、候选来源和不确定性。",
+            "只读取公开来源；遇到登录墙、验证码、付费墙或访问限制时停止并记录限制。",
+            "为每条关键结论保留 source_url、source_title、retrieved_at、evidence_snippet 和 confidence。",
+            "生成 report.md、sources.json、research_plan.md 和 feedback_requests.json。",
+            "对来源质量和结论可信度请求用户反馈。",
+            "长期研究偏好只能通过候选规则补丁沉淀，等待审批。",
+        ]
     else:
         steps = ["理解用户任务", "生成计划", "执行低风险步骤", "关键动作前确认", "输出结果和反馈请求"]
     lines = [f"# Runbook: {spec['agent']['name']}", "", "## 标准流程", ""]
@@ -194,6 +207,32 @@ def _output_schema(spec: Dict[str, Any]) -> Dict[str, Any]:
                 "outline": {"type": "array", "items": {"type": "string"}},
                 "draft": {"type": "string"},
                 "publish_package": {"type": "object"},
+            },
+        }
+    if spec["agent"]["type"] == "research-agent":
+        return {
+            "type": "object",
+            "required": ["summary", "comparison", "sources", "open_questions"],
+            "properties": {
+                "summary": {"type": "string"},
+                "comparison": {"type": "array", "items": {"type": "object"}},
+                "sources": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": ["source_url", "source_title", "retrieved_at", "evidence_snippet", "source_type", "confidence"],
+                        "properties": {
+                            "source_url": {"type": "string"},
+                            "source_title": {"type": "string"},
+                            "retrieved_at": {"type": "string"},
+                            "evidence_snippet": {"type": "string"},
+                            "source_type": {"type": "string"},
+                            "confidence": {"type": "number"},
+                            "inference_note": {"type": "string"},
+                        },
+                    },
+                },
+                "open_questions": {"type": "array", "items": {"type": "string"}},
             },
         }
     return {"type": "object"}
@@ -278,4 +317,23 @@ def _sample_publish_package() -> str:
 1. 为什么 AI Review 不只是找 bug
 2. 它如何暴露隐性工程规则
 3. 如何把反馈沉淀成下一次更好的审查
+"""
+
+
+def _sample_research_report() -> str:
+    return """# Sample Research Report
+
+## Summary
+
+本报告展示 Research Agent 的 dry run 输出形态。真实运行时，每条关键结论都应带来源字段和证据片段。
+
+## Source Fields
+
+- source_url
+- source_title
+- retrieved_at
+- evidence_snippet
+- source_type
+- confidence
+- inference_note
 """

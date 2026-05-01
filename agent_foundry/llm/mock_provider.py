@@ -34,6 +34,8 @@ class MockLLMProvider(BaseLLMProvider):
             return self._review_dry_run(user_prompt)
         if schema_name == "writing_dry_run":
             return self._writing_dry_run(user_prompt)
+        if schema_name == "research_dry_run":
+            return self._research_dry_run(user_prompt)
         return _minimal_json_for_schema(schema)
 
     def _intent(self, prompt: str) -> Dict[str, Any]:
@@ -168,6 +170,34 @@ class MockLLMProvider(BaseLLMProvider):
                 "checklist": ["标题不过度营销", "有真实例子", "发布前人工确认"],
             },
             "style_rule_patch_markdown": "# Style Rule Patch Proposal\n\n```diff\n+ 写 Agent 工程文章时，优先用真实工作流问题切入，再抽象成架构原则。\n```\n",
+        }
+
+    def _research_dry_run(self, prompt: str) -> Dict[str, Any]:
+        return {
+            "report_markdown": "# Mock Research Report\n\n## Summary\n\n这是由 Mock LLM 生成的 research dry run。它验证带来源字段的报告、研究计划和反馈请求是否能稳定落盘。\n\n## Source Contract\n\n每条结论都保留 source_url、source_title、retrieved_at、evidence_snippet、source_type、confidence 和 inference_note。\n",
+            "research_plan": [
+                "确认比较对象和维度。",
+                "优先读取官方公开页面和价格入口。",
+                "记录证据片段和不确定性。",
+            ],
+            "sources": [
+                {
+                    "source_url": "https://example.com/notion",
+                    "source_title": "Notion public page placeholder",
+                    "retrieved_at": "2026-05-01",
+                    "evidence_snippet": "Mock evidence snippet.",
+                    "source_type": "official_public_page_placeholder",
+                    "confidence": 0.5,
+                    "inference_note": "Mock provider does not access live web.",
+                }
+            ],
+            "feedback_requests": [
+                {
+                    "id": "RQ001",
+                    "question": "来源字段是否足够可复核？",
+                    "options": ["accepted", "needs_more_evidence", "weak_source"],
+                }
+            ],
         }
 
 

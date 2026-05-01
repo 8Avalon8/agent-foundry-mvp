@@ -99,6 +99,8 @@ export AGENT_FOUNDRY_OPENAI_MODEL="gpt-5.5"
 export OPENAI_BASE_URL="https://your-gateway.example/v1"
 ```
 
+Windows 本地运行时也可以把 `OPENAI_API_KEY`、`OPENAI_BASE_URL` 和 `AGENT_FOUNDRY_OPENAI_MODEL` 写在项目根目录 `.env`。CLI 会自动从当前目录向上查找 `.env`，并且不会覆盖已经存在的系统环境变量。
+
 ---
 
 ## 运行方式
@@ -350,6 +352,28 @@ python3 -m agent_foundry.cli writing-feedback ./workspace/agents/wechat-ai-write
 
 风格规则只会更新 `style_rule_patch.md` 候选，不会自动写入 `style_rules.md`。
 
+### Research dry run
+
+research-agent dry run 会生成 `report.md`、`sources.json`、`research_plan.md` 和 `feedback_requests.json`。其中 `sources.json` 必须保留 `source_url`、`source_title`、`retrieved_at`、`evidence_snippet`、`source_type`、`confidence` 和 `inference_note`，用于复核报告里的事实来源。
+
+dry run 不执行真实网页访问、登录、验证码处理、表单提交或外部发布。真实来源抓取仍受 `tool_policy` 约束。
+
+### Research real run 产物约定
+
+真实 Research run 不是只生成一篇报告。它必须至少生成 dry run 声明的四个核心产物，并补充可审计运行轨迹：
+
+```text
+report.md
+sources.json
+research_plan.md
+feedback_requests.json
+evidence_matrix.json
+run_log.json
+raw_notes/
+```
+
+`evidence_matrix.json` 用于把报告结论映射到来源证据；`run_log.json` 记录检索词、抓取时间、权限决策和跳过原因；`raw_notes/` 保存抽取后的网页笔记或引用摘要，不默认保存整页内容。当前 MVP 只实现 deterministic / LLM dry run；真实网页抓取和真实 Research run 仍是后续范围。
+
 ### LLM dry run
 
 ```bash
@@ -385,6 +409,7 @@ MVP 重点验证：
 ```text
 1. SVN Review Agent
 2. 微信公众号 / AI 写作 Agent
+3. Research Agent dry run
 ```
 
 ---
@@ -406,7 +431,7 @@ python3 -m unittest discover -s tests -v
 6. Agent Design Card 阶段分组
 7. AgentSpec 安全默认值和 schema 约束
 8. 工程文件生成稳定文件集
-9. Review / Writing feedback 闭环
+9. Review / Writing / Research dry run 与反馈产物
 10. Runtime Permission Engine approval request
 11. Web / A2UI renderer 和 action event protocol
 12. UI demo action events -> AgentSpec -> dry run
@@ -423,6 +448,8 @@ python3 -m unittest discover -s tests -v
 | Review board | `python3 -m agent_foundry.cli board "我想做一个 SVN Review Agent" --llm-provider mock --stage feedback_protocol --format cli` | 展示动态问题、推荐理由和影响预览。 |
 | Review E2E | `python3 -m agent_foundry.cli new "我想做一个 SVN Review Agent，帮我审查 diff" --llm-provider mock --accept-recommended --dry-run --output ./workspace` | dry run 下生成 `review_report.md`、`findings.json`、`test_suggestions.md`、`feedback_requests.json`、`rule_patch_proposal.md`。 |
 | Writing E2E | `python3 -m agent_foundry.cli new "我想做一个微信公众号写作 Agent，帮我把素材变成文章" --llm-provider mock --accept-recommended --dry-run --output ./workspace` | dry run 下生成 `topic_options.md`、`outline.md`、`article.md`、`publish_package.json`、`style_rule_patch.md`。 |
+| Research E2E | `python3 -m agent_foundry.cli new "我想做一个竞品研究 Agent，比较 Notion、飞书多维表格、Airtable" --type research-agent --llm-provider mock --accept-recommended --dry-run --output ./workspace` | dry run 下生成 `report.md`、`sources.json`、`research_plan.md`、`feedback_requests.json`，且 `sources.json` 保留来源字段。 |
+| Research real run protocol | 查看 `docs/agentspec_runtime.md` | 真实 Research run 需要额外生成 `evidence_matrix.json`、`run_log.json` 和 `raw_notes/`，但当前 MVP 尚未实现真实网页抓取。 |
 | 权限安全 | 查看生成的 `agent.yaml` 与 `permission_checks.json` | 高风险动作没有静默 `allow`，长期记忆更新需要审批。 |
 | UI Demo | `python3 -m agent_foundry.cli ui-demo --output ./workspace/ui_demo` | 生成 review/writing 两条 action event -> AgentSpec -> dry run demo。 |
 | Conversation Builder | `python3 -m agent_foundry.cli chat-build "我想做一个 SVN Review Agent，帮我审查 diff" --llm-provider mock --reply "都按推荐" --format a2ui-json --output ./workspace` | 从自然语言目标和回答自动生成 Agent 工程与 dry run，并返回可渲染 A2UI tree。 |

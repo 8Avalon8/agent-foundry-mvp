@@ -84,7 +84,7 @@ class ConversationRuntimeTest(unittest.TestCase):
             self.assertEqual(data["a2ui_tree"]["root"]["type"], "Stack")
             self.assertTrue(Path(data["run_dir"]).exists())
 
-    def test_use_recommended_action_advances_from_web_confirm_bar(self) -> None:
+    def test_use_recommended_action_waits_for_stage_confirmation(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             runtime = ConversationRuntime(Path(tmp), provider_name="mock")
             started = runtime.start("我想做一个 SVN Review Agent，帮我审查 diff")
@@ -101,10 +101,25 @@ class ConversationRuntimeTest(unittest.TestCase):
                 }
             )
 
-            self.assertIn(responded["status"], {"asking", "completed"})
+            self.assertEqual(responded["status"], "awaiting_confirmation")
+            self.assertEqual(responded["session"]["current_stage"], "foundation")
             self.assertEqual(responded["a2ui_tree"]["session_id"], session_id)
             self.assertTrue(responded["events"])
             self.assertEqual(responded["events"][0]["action"], "use_recommended")
+
+            confirmed = runtime.respond(
+                {
+                    "session_id": session_id,
+                    "action_event": {
+                        "action": "confirm_stage",
+                        "session_id": session_id,
+                        "payload": {"stage": "foundation"},
+                    },
+                }
+            )
+
+            self.assertEqual(confirmed["status"], "asking")
+            self.assertEqual(confirmed["session"]["current_stage"], "autonomy")
 
     def test_web_app_html_contains_a2ui_bootstrap(self) -> None:
         html = render_builder_web_app({"provider": "mock", "output_root": "workspace/web_builder"})

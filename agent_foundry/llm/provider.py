@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import os
+from pathlib import Path
 from typing import Any, Dict, Optional, Protocol
 
 JSONDict = Dict[str, Any]
@@ -48,6 +50,7 @@ class BaseLLMProvider:
 
 
 def get_provider(config: LLMConfig) -> LLMProvider:
+    _load_dotenv_if_present()
     provider_name = (config.provider or "mock").lower()
     if provider_name in {"offline", "none"}:
         raise LLMProviderError("offline provider is represented by None; use provider_from_name for optional providers")
@@ -84,3 +87,39 @@ def get_llm_provider(provider: str = "mock", model: Optional[str] = None) -> LLM
 def json_dumps(data: Any) -> str:
     import json
     return json.dumps(data, ensure_ascii=False, indent=2)
+
+
+def _load_dotenv_if_present(start: Optional[Path] = None) -> Optional[Path]:
+    dotenv = _find_dotenv(start or Path.cwd())
+    if dotenv is None:
+        return None
+    for raw_line in dotenv.read_text(encoding="utf-8-sig").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("export "):
+            line = line[len("export ") :].strip()
+        if "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        if not key or not key.replace("_", "").isalnum() or key[0].isdigit():
+            continue
+        value = value.strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+            value = value[1:-1]
+        elif " #" in value:
+            value = value.split(" #", 1)[0].rstrip()
+        os.environ.setdefault(key, value)
+    return dotenv
+
+
+def _find_dotenv(start: Path) -> Optional[Path]:
+    current = start.resolve()
+    if current.is_file():
+        current = current.parent
+    for directory in [current, *current.parents]:
+        candidate = directory / ".env"
+        if candidate.exists() and candidate.is_file():
+            return candidate
+    return None
