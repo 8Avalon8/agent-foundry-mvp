@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional
 import yaml
 
 from .feedback_engine import batch_feedback_requests, topic_selection_request
+from .permission_engine import permission_checks_for_spec
 
 
 def load_agent_spec(agent_dir: Path) -> Dict[str, Any]:
@@ -28,6 +29,10 @@ def dry_run(
     agent_type = spec["agent"]["type"]
     run_dir = output_dir or agent_dir / "runs" / f"dry_run_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     run_dir.mkdir(parents=True, exist_ok=True)
+    (run_dir / "permission_checks.json").write_text(
+        json.dumps(permission_checks_for_spec(spec), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
     if agent_type == "review-agent":
         if sample_input is None:
             sample_input = agent_dir / "examples" / "sample_input.diff"

@@ -227,6 +227,14 @@ tool_policy.shell.run_tests.permission
 - `ask`：生成审批请求。
 - `deny`：拒绝执行。
 
+Runtime 的权限判断输出必须稳定可序列化：
+
+- `status=allowed`：可继续执行。
+- `status=requires_approval`：必须暂停，输出 approval request。
+- `status=denied`：直接拒绝并记录原因。
+
+approval request 支持动作：`approve_once`、`reject`、`show_impact`、`add_to_whitelist`。其中 `add_to_whitelist` 只生成策略补丁请求，不会静默改白名单。
+
 审批请求示例：
 
 ```yaml

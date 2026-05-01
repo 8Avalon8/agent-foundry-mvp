@@ -25,6 +25,8 @@ from agent_foundry.builder.llm_builder import apply_natural_language_update, cre
 from agent_foundry.llm import LLMProviderError, provider_from_name
 from agent_foundry.runtime.dry_run import dry_run
 from agent_foundry.runtime.memory_engine import ALLOWED_REVIEW_LABELS, propose_memory_patch, propose_style_patch
+from agent_foundry.runtime.permission_engine import check_permission
+from agent_foundry.runtime.dry_run import load_agent_spec
 
 
 def _add_llm_args(parser: argparse.ArgumentParser) -> None:
@@ -116,6 +118,11 @@ def build_parser() -> argparse.ArgumentParser:
     p_writing_feedback.add_argument("run_dir", type=Path)
     p_writing_feedback.add_argument("--topic", required=True, help="Selected topic number or exact topic text")
     p_writing_feedback.add_argument("--style-feedback", default="", help="Natural-language style feedback to convert into a style patch candidate")
+
+    p_permission = sub.add_parser("permission-check", help="Check one tool against a generated agent's tool_policy")
+    p_permission.add_argument("agent_dir", type=Path)
+    p_permission.add_argument("tool")
+    p_permission.add_argument("--payload-json", default="{}", help="Optional JSON payload for the approval request")
 
     return parser
 
@@ -386,6 +393,17 @@ def cmd_writing_feedback(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_permission_check(args: argparse.Namespace) -> int:
+    spec = load_agent_spec(args.agent_dir)
+    try:
+        payload = json.loads(args.payload_json)
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"--payload-json must be valid JSON: {exc}") from exc
+    decision = check_permission(spec, args.tool, payload=payload)
+    print(json.dumps(decision.to_dict(), ensure_ascii=False, indent=2))
+    return 0
+
+
 def _resolve_topic_selection(topics: List[str], raw: str) -> str:
     if raw.isdigit():
         index = int(raw) - 1
@@ -424,6 +442,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         return cmd_feedback(args)
     if args.command == "writing-feedback":
         return cmd_writing_feedback(args)
+    if args.command == "permission-check":
+        return cmd_permission_check(args)
     parser.print_help()
     return 2
 
