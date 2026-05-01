@@ -263,18 +263,30 @@ class AgentDesignCard:
     unresolved: List[str]
     recommendation: str
     next_step: str
+    confirmed_by_stage: Dict[str, List[str]] = field(default_factory=dict)
+    unresolved_by_stage: Dict[str, List[str]] = field(default_factory=dict)
 
     def to_markdown(self) -> str:
         lines = [f"# Agent Design Card: {self.title}", ""]
         if self.recommendation:
             lines.extend(["## 推荐模式", "", self.recommendation, ""])
         lines.extend(["## 已确认", ""])
-        if self.confirmed:
+        if self.confirmed_by_stage:
+            for stage, items in self.confirmed_by_stage.items():
+                lines.extend([f"### {stage}", ""])
+                lines.extend([f"- {item}" for item in items] or ["- 暂无"])
+                lines.append("")
+        elif self.confirmed:
             lines.extend([f"- {item}" for item in self.confirmed])
         else:
             lines.append("- 暂无")
         lines.extend(["", "## 待确认", ""])
-        if self.unresolved:
+        if self.unresolved_by_stage:
+            for stage, items in self.unresolved_by_stage.items():
+                lines.extend([f"### {stage}", ""])
+                lines.extend([f"- {item}" for item in items] or ["- 暂无"])
+                lines.append("")
+        elif self.unresolved:
             lines.extend([f"- {item}" for item in self.unresolved])
         else:
             lines.append("- 暂无")

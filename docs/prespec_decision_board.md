@@ -39,6 +39,8 @@ Pre-Spec 阶段位于 AgentSpec 之前。它负责把“我想做一个什么 Ag
 - `DryRunPreview`
 - `AgentDesignCard`
 
+`AgentDesignCard` 当前按阶段分组展示“已确认”和“待确认”。`medium_high`、`high`、`critical` 风险的问题如果只是采用推荐默认值，会继续显示为“尚未确认”，直到用户通过交互选择或自然语言指令明确确认。
+
 ## 分阶段决策图
 
 ### Stage 1：基础目标确认

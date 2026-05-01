@@ -223,6 +223,7 @@ def _interactive_collect(session, session_path: Optional[Path] = None) -> None:
             session.metadata["interactive_confirmed_stages"] = [item for item in stages if item in confirmed_stages]
         if session_path:
             save_session(session, session_path)
+            _save_design_card_snapshot(session, session_path)
             print(f"Saved stage `{stage}` session: {session_path}")
         if stage != stages[-1]:
             cont = input("确认本阶段并进入下一阶段？[Y/n] ").strip().lower()
@@ -231,12 +232,18 @@ def _interactive_collect(session, session_path: Optional[Path] = None) -> None:
             advance_stage(session)
             if session_path:
                 save_session(session, session_path)
+                _save_design_card_snapshot(session, session_path)
 
 
 def _format_default(default: Any) -> str:
     if isinstance(default, list):
         return ",".join(str(item) for item in default)
     return "" if default is None else str(default)
+
+
+def _save_design_card_snapshot(session, session_path: Path) -> None:
+    card_path = session_path.with_name(f"{session.id}_design_card.md")
+    card_path.write_text(generate_design_card(session).to_markdown(), encoding="utf-8")
 
 
 def _parse_interactive_value(q, raw: str, default: Any) -> tuple[Any, str]:

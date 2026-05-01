@@ -157,21 +157,52 @@ def advance_stage(session: PreSpecSession) -> bool:
 def generate_design_card(session: PreSpecSession) -> AgentDesignCard:
     summary = _summary_for_session(session)
     confirmed: List[str] = []
-    question_titles: Dict[str, str] = {}
+    unresolved: List[str] = []
+    confirmed_by_stage: Dict[str, List[str]] = {}
+    unresolved_by_stage: Dict[str, List[str]] = {}
     for stage in get_stage_order(session.inferred_agent_type):
         for q in _session_questions(session, stage):
-            question_titles[q.id] = q.title
-    for key, decision in session.decisions.items():
-        title = question_titles.get(key, key)
-        confirmed.append(f"{title}：{decision.value}")
-    unresolved = [question_titles.get(key, key) for key in session.unresolved if key not in session.decisions]
+            decision = session.decisions.get(q.id)
+            if decision is None:
+                if q.required:
+                    item = _unconfirmed_card_item(q)
+                    unresolved.append(item)
+                    unresolved_by_stage.setdefault(stage, []).append(item)
+                continue
+            item = f"{q.title}：{decision.value}"
+            if _needs_explicit_confirmation(q, decision.source):
+                item = _unconfirmed_card_item(q, decision.value)
+                unresolved.append(item)
+                unresolved_by_stage.setdefault(stage, []).append(item)
+                continue
+            confirmed.append(item)
+            confirmed_by_stage.setdefault(stage, []).append(item)
     preset_title = session.selected_preset or "未选择 preset"
     recommendation = f"当前采用 `{preset_title}`，可在后续阶段继续细化权限、反馈和记忆策略。"
     llm_design = session.metadata.get("llm_design") or {}
     if llm_design.get("recommended_preset_reason"):
         recommendation += f"\n\nLLM 推荐理由：{llm_design['recommended_preset_reason']}"
     next_step = "确认后可编译 AgentSpec，并生成 Agent 工程文件。"
-    return AgentDesignCard(summary.title, confirmed, unresolved, recommendation, next_step)
+    return AgentDesignCard(
+        summary.title,
+        confirmed,
+        unresolved,
+        recommendation,
+        next_step,
+        confirmed_by_stage=confirmed_by_stage,
+        unresolved_by_stage=unresolved_by_stage,
+    )
+
+
+def _needs_explicit_confirmation(question: DecisionQuestion, source: str) -> bool:
+    if question.risk_level not in {"medium_high", "high", "critical"}:
+        return False
+    return source not in {"user_selected", "llm_interpreted_user_instruction"}
+
+
+def _unconfirmed_card_item(question: DecisionQuestion, value: Any = None) -> str:
+    suffix = f"默认建议：{value if value is not None else question.recommended}" if (value is not None or question.recommended is not None) else "暂无默认值"
+    return f"{question.title}：尚未确认（{suffix}；风险：{question.risk_level}）"
 
 
 def save_session(session: PreSpecSession, path: Path) -> None:
