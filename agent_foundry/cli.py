@@ -27,6 +27,7 @@ from agent_foundry.runtime.dry_run import dry_run
 from agent_foundry.runtime.memory_engine import ALLOWED_REVIEW_LABELS, propose_memory_patch, propose_style_patch
 from agent_foundry.runtime.permission_engine import check_permission
 from agent_foundry.runtime.dry_run import load_agent_spec
+from agent_foundry.renderers.a2ui_renderer import board_to_a2ui_tree
 from agent_foundry.renderers.web_renderer import board_to_web_view_model, render_web_html
 
 
@@ -89,7 +90,11 @@ def build_parser() -> argparse.ArgumentParser:
     p_board.add_argument("--type", dest="agent_type")
     p_board.add_argument("--preset")
     p_board.add_argument("--stage", help="Optional stage id, e.g. tool_permissions or feedback_protocol")
-    p_board.add_argument("--format", choices=["cli", "markdown", "html", "json", "web-json", "web-html"], default="cli")
+    p_board.add_argument(
+        "--format",
+        choices=["cli", "markdown", "html", "json", "web-json", "web-html", "a2ui-json"],
+        default="cli",
+    )
     p_board.add_argument("--output", type=Path, help="Output file for html/json/markdown")
     _add_llm_args(p_board)
 
@@ -143,6 +148,8 @@ def cmd_board(args: argparse.Namespace) -> int:
         text = json.dumps(board_to_web_view_model(board), ensure_ascii=False, indent=2)
     elif args.format == "web-html":
         text = render_web_html(board)
+    elif args.format == "a2ui-json":
+        text = json.dumps(board_to_a2ui_tree(board), ensure_ascii=False, indent=2)
     else:
         text = json.dumps(board.to_dict(), ensure_ascii=False, indent=2)
     if args.output:

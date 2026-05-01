@@ -66,6 +66,32 @@ Web view model 包含组件 `type`、`id`、`props`、`state_key` 和可触发�
 - Web renderer 不改变 `PreSpecSession` 或 `DecisionBoard`。
 - 推荐理由、风险等级、影响预览和确认动作必须保留在输出中。
 
+### A2UI-compatible Renderer
+
+`agent_foundry.renderers.a2ui_renderer` 将同一个 `DecisionBoard` 映射成 A2UI-compatible component tree。
+`DecisionBoard` 仍然是业务 source of truth，A2UI 只是渲染目标。
+
+当前组件映射：
+
+- `AgentSummaryCard`
+- `PresetCardGroup`
+- `StageProgress`
+- `DecisionCard`
+- `ChoiceGroup`
+- `MultiChoiceGroup`
+- `TextInputWithHint`
+- `ImpactDiff`
+- `ConfirmBar`
+
+A2UI 输出包含：
+
+- component `type` / `id` / `props`。
+- `state_key` 与 `on_change` action payload。
+- `risk_level`、`recommendation`、`requires_input`、`affects`。
+- session-scoped `action_payload_schema`。
+
+可以通过 `agent-foundry board ... --format a2ui-json` 导出。
+
 ## 分阶段决策图
 
 ### Stage 1：基础目标确认
