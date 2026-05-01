@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional
 from .models import AgentDesignCard, DecisionBoard, DecisionQuestion, PreSpecSession
 from .intent_parser import parse_intent
 from .presets import find_preset, get_presets, get_recommended_preset
-from .decision_graph import get_agent_summary, get_questions, get_stage_order, next_stage, required_question_ids
+from .decision_graph import get_agent_summary, get_questions, get_stage_order, next_stage
 from .impact_preview import build_impact_preview, impact_preview_as_diff
 
 
@@ -16,7 +16,7 @@ def create_session(user_goal: str, explicit_type: Optional[str] = None) -> PreSp
     session = PreSpecSession(user_goal=user_goal, inferred_agent_type=parsed.likely_agent_type)
     session.metadata["builder_mode"] = "offline"
     session.metadata["parsed_intent"] = parsed.to_dict()
-    session.refresh_unresolved(required_question_ids(parsed.likely_agent_type))
+    refresh_visible_unresolved(session)
     return session
 
 
@@ -31,7 +31,54 @@ def _session_questions(session: PreSpecSession, stage: str) -> List[DecisionQues
         questions.extend(dynamic_questions_for_stage(session, stage))
     except Exception:
         pass
-    return questions
+    return [question for question in questions if is_question_visible(question, session)]
+
+
+def is_question_visible(question: DecisionQuestion, session: PreSpecSession) -> bool:
+    condition = question.visible_when
+    if not condition:
+        return True
+    return _matches_visible_condition(condition, session)
+
+
+def _matches_visible_condition(condition: Dict[str, Any], session: PreSpecSession) -> bool:
+    if "all" in condition:
+        return all(_matches_visible_condition(item, session) for item in condition["all"])
+    if "any" in condition:
+        return any(_matches_visible_condition(item, session) for item in condition["any"])
+    if "not" in condition:
+        return not _matches_visible_condition(condition["not"], session)
+
+    question_id = condition.get("question") or condition.get("id")
+    if question_id:
+        actual = session.get_value(str(question_id))
+        if "equals" in condition:
+            return actual == condition["equals"]
+        if "not_equals" in condition:
+            return actual != condition["not_equals"]
+        if "in" in condition:
+            return actual in condition["in"]
+        if "contains" in condition:
+            return isinstance(actual, list) and condition["contains"] in actual
+        return bool(actual)
+
+    for key, expected in condition.items():
+        if session.get_value(key) != expected:
+            return False
+    return True
+
+
+def visible_required_question_ids(session: PreSpecSession) -> List[str]:
+    ids: List[str] = []
+    for stage in get_stage_order(session.inferred_agent_type):
+        for question in _session_questions(session, stage):
+            if question.required:
+                ids.append(question.id)
+    return ids
+
+
+def refresh_visible_unresolved(session: PreSpecSession) -> None:
+    session.refresh_unresolved(visible_required_question_ids(session))
 
 
 def _summary_for_session(session: PreSpecSession):
@@ -57,14 +104,20 @@ def apply_preset(session: PreSpecSession, preset_id: Optional[str] = None, sourc
 def apply_recommended_defaults(session: PreSpecSession, include_all_stages: bool = True) -> None:
     stages = get_stage_order(session.inferred_agent_type) if include_all_stages else [session.current_stage]
     for stage in stages:
-        for question in _session_questions(session, stage):
-            if question.id not in session.decisions:
-                default_value = question.recommended if question.recommended is not None else question.default
-                if default_value is not None:
-                    session.apply_decision(question.id, default_value, source="recommended_accepted", confidence="medium")
+        changed = True
+        while changed:
+            changed = False
+            for question in _session_questions(session, stage):
+                if question.id not in session.decisions:
+                    default_value = question.recommended if question.recommended is not None else question.default
+                    if default_value is not None:
+                        session.apply_decision(question.id, default_value, source="recommended_accepted", confidence="medium")
+                        changed = True
+    refresh_visible_unresolved(session)
 
 
 def build_decision_board(session: PreSpecSession) -> DecisionBoard:
+    refresh_visible_unresolved(session)
     summary = _summary_for_session(session)
     impacts = build_impact_preview(session)
     return DecisionBoard(
@@ -305,4 +358,3 @@ def render_board_html(board: DecisionBoard) -> str:
 </main>
 </body>
 </html>"""
-

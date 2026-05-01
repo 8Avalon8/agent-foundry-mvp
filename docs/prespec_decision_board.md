@@ -346,6 +346,7 @@ decision_question:
 - `type` 是兼容旧文档和旧 renderer 的 wire-format 别名；读取时接受 `type`，写出时同时包含 `input_type` 和 `type`。
 - `required: true` 的可见问题会进入 `PreSpecSession.unresolved`；当 `apply_decision()` 记录该问题答案后，对应 id 会从 `unresolved` 清除。
 - 当决策图发生条件分支变化时，`unresolved` 应从当前可见的 required 问题重新生成，避免隐藏问题继续阻塞 session。
+- `visible_when` 用来表达条件追问；MVP 支持 `{question, equals}`、`{question, in}`、`{question, contains}`、`all`、`any` 和 `not`。例如 `run_tests=deny` 时不显示测试白名单，`publish_policy=never_publish` 时不显示发布审批细节。
 
 ### 输入组件类型
 
