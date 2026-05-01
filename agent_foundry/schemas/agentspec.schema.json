@@ -19,9 +19,29 @@
     "autonomy": {"type": "object"},
     "inputs": {"type": "object"},
     "tools": {"type": "object"},
-    "tool_policy": {"type": "object"},
+    "tool_policy": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["permission", "risk"],
+        "properties": {
+          "permission": {"enum": ["allow", "ask", "deny"]},
+          "risk": {"enum": ["low", "low_to_medium", "medium", "medium_high", "high", "critical"]},
+          "scope": {},
+          "allowed_commands": {"type": "array", "items": {"type": "string"}}
+        },
+        "additionalProperties": true
+      }
+    },
     "human_feedback": {"type": "object"},
-    "memory": {"type": "object"},
+    "memory": {
+      "type": "object",
+      "required": ["update_requires_approval"],
+      "properties": {
+        "update_requires_approval": {"const": true}
+      },
+      "additionalProperties": true
+    },
     "output": {"type": "object"},
     "eval": {"type": "object"}
   }

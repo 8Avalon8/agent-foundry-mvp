@@ -144,6 +144,13 @@ examples/
 4. 所有 `allow` / `ask` / `deny` 权限清晰。
 5. 生成文件可读、可加载、可 dry run。
 
+安全默认值约定：
+
+- 未由用户明确确认的运行测试、写文件、外部发布和长期记忆更新，必须编译为 `ask` 或 `deny`。
+- `svn.commit` 和外部发布默认 `deny`；只有用户显式确认发布策略后，发布动作才可进入 `ask`。
+- `tool_policy` 每个条目都必须包含 `permission` 和 `risk`。
+- `memory.update_requires_approval` 必须为 `true`，Rule Patch / Style Patch 只能作为候选补丁等待审批。
+
 ## 工程目录结构
 
 目标形态：
@@ -280,4 +287,3 @@ rule_patch_proposal:
 - 任何长期规则更新都必须经过审批。
 - 权限策略变更必须经过审批。
 - 不允许记忆 credentials、secrets 或无关隐私内容。
-

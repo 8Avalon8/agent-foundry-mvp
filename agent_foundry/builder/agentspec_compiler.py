@@ -51,6 +51,13 @@ def _decision(session: PreSpecSession, key: str, default: Any) -> Any:
     return session.get_value(key, default)
 
 
+def _is_user_confirmed(session: PreSpecSession, key: str) -> bool:
+    decision = session.decisions.get(key)
+    if decision is None:
+        return False
+    return decision.source in {"user_selected", "llm_interpreted_user_instruction"}
+
+
 def _custom_decisions(session: PreSpecSession) -> Dict[str, Any]:
     dynamic_ids = {q.get("id") for q in session.metadata.get("llm_dynamic_questions", []) if q.get("id")}
     return {
@@ -82,8 +89,11 @@ def _compile_review_agent(session: PreSpecSession, agent_name: str | None) -> Di
     }.get(context, "current_project")
 
     code_search_permission = "deny" if context == "diff_only" else "allow"
-    test_permission = {"deny": "deny", "ask": "ask", "allow_whitelist": "allow"}.get(run_tests, "ask")
-    whitelist_raw = session.get_inputs("run_tests").get("test_command_whitelist", [])
+    if run_tests == "allow_whitelist" and _is_user_confirmed(session, "run_tests"):
+        test_permission = "allow"
+    else:
+        test_permission = {"deny": "deny", "ask": "ask", "allow_whitelist": "ask"}.get(run_tests, "ask")
+    whitelist_raw = session.get_inputs("run_tests").get("test_command_whitelist", session.get_value("test_command_whitelist", []))
     if isinstance(whitelist_raw, str):
         whitelist = [x.strip() for x in re.split(r"[,\n]", whitelist_raw) if x.strip()]
     else:
@@ -162,7 +172,8 @@ def _compile_review_agent(session: PreSpecSession, agent_name: str | None) -> Di
                 "short_term": ["current_diff", "current_review_context", "current_user_feedback"],
                 "long_term_candidates": _decision(session, "memory_scope", ["accepted_patterns", "false_positive_patterns", "project_rules"]),
                 "update_policy": memory_policy,
-                "update_requires_approval": memory_policy != "auto_low_risk_memory",
+                "update_requires_approval": True,
+                "rule_patch": {"requires_approval": True},
                 "forbidden": ["credentials", "secrets", "unrelated_private_content"],
             },
             "output": {"format": output_format, "artifacts": artifacts},
@@ -198,7 +209,7 @@ def _compile_writing_agent(session: PreSpecSession, agent_name: str | None) -> D
     }
     artifacts = [artifact_mapping[x] for x in output_package if x in artifact_mapping]
 
-    publish_permission = "deny" if publish_policy == "never_publish" else "ask"
+    publish_permission = "ask" if publish_policy != "never_publish" and _is_user_confirmed(session, "publish_policy") else "deny"
     spec.update(
         {
             "goal": {
@@ -218,7 +229,7 @@ def _compile_writing_agent(session: PreSpecSession, agent_name: str | None) -> D
             },
             "tool_policy": {
                 "fs.read_notes": {"permission": "allow" if "markdown_notes" in material_sources else "ask", "scope": session.get_inputs("material_sources").get("notes_path", "configured_notes_path"), "risk": "medium"},
-                "fs.write_draft": {"permission": "allow", "risk": "low"},
+                "fs.write_draft": {"permission": "ask", "risk": "medium"},
                 "wechat.create_draft": {"permission": "ask", "risk": "high"},
                 "wechat.publish": {"permission": publish_permission, "risk": "critical"},
             },
@@ -234,6 +245,7 @@ def _compile_writing_agent(session: PreSpecSession, agent_name: str | None) -> D
                 "long_term_candidates": _decision(session, "style_memory_scope", ["tone", "title_preference", "article_structure"]),
                 "update_policy": _decision(session, "style_memory_policy", "approved_style_patch"),
                 "update_requires_approval": True,
+                "style_patch": {"requires_approval": True},
                 "forbidden": ["credentials", "private_unrelated_content"],
             },
             "output": {"format": "publish_package", "artifacts": artifacts},
