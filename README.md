@@ -1,6 +1,6 @@
-# Agent Foundry MVP — LLM Upgrade
+# Agent Foundry MVP — v0.2 Runnable Harness
 
-这是一个可运行的 **Agent Builder / Agent 蓝图生成器** MVP。
+这是一个可运行的 **Agent Builder / Agent 蓝图生成器** MVP。v0.2 新增了受控的 SVN Review Runtime，让生成出来的 `review-agent` 可以对真实或 fixture SVN working copy 跑一次最小审查。
 
 当前版本已经支持两种模式：
 
@@ -21,6 +21,7 @@ LLM 模式：LLM 负责意图理解、设计草案、动态问题、自然语言
   → AgentSpec v0.1
   → Agent 工程文件
   → Deterministic or LLM Dry Run
+  → review-agent 可选进入真实 SVN review harness
 ```
 
 ---
@@ -340,6 +341,52 @@ python3 -m agent_foundry.cli feedback ./workspace/agents/svn-reviewer/runs/dry_r
 
 支持标签：`accepted`、`false_positive`、`too_minor`、`duplicate`、`needs_more_evidence`。规则补丁只会写入 `rule_patch_proposal.md`，不会自动更新长期规则。
 
+### SVN Review Runtime
+
+生成 `svn-reviewer` 后，可以让它读取 SVN working copy 的 `svn diff`，解析变更文件，读取受限上下文，并生成真实 run 目录：
+
+```bash
+python3 -m agent_foundry.cli review-svn ./tests/fixtures/fake_svn_working_copy \
+  --agent ./workspace/agents/svn-reviewer \
+  --output ./workspace/runs \
+  --llm-provider mock
+```
+
+输出目录形如：
+
+```text
+workspace/runs/review_svn_YYYYMMDD_HHMMSS/
+  review_report.md
+  findings.json
+  feedback_requests.json
+  test_suggestions.md
+  rule_patch_proposal.md
+  run_log.json
+  permission_checks.json
+  context_snapshot.json
+  pending_approvals.json
+  approval_log.jsonl
+  run_state.json
+```
+
+运行测试仍然不会自动执行。若 `shell.run_tests.permission == ask`，runtime 只会生成 pending approval：
+
+```bash
+python3 -m agent_foundry.cli approvals ./workspace/runs/review_svn_xxx
+python3 -m agent_foundry.cli approve ./workspace/runs/review_svn_xxx approval_shell_run_tests --decision reject
+python3 -m agent_foundry.cli resume ./workspace/runs/review_svn_xxx
+```
+
+Rule Patch 必须显式处理，不会自动写入长期记忆：
+
+```bash
+python3 -m agent_foundry.cli memory-review ./workspace/runs/review_svn_xxx
+python3 -m agent_foundry.cli memory-apply ./workspace/agents/svn-reviewer ./workspace/runs/review_svn_xxx --patch rule_patch_proposal.md
+python3 -m agent_foundry.cli memory-reject ./workspace/agents/svn-reviewer ./workspace/runs/review_svn_xxx --reason "too broad"
+```
+
+`memory-apply` 只追加到 `learned_rules.md`，并写入 `memory_log.jsonl`。下一次 `review-svn` 会加载 `learned_rules.md`，并在 `run_log.json` 和 `context_snapshot.json` 里记录。
+
 ### Writing feedback 选题和风格闭环
 
 writing-agent dry run 会生成 `topic_options.md`、`topic_selection_request.json`、`outline.md`、`article.md`、`publish_package.json` 和 `style_rule_patch.md`。用户可以选择选题并提交风格反馈：
@@ -432,12 +479,13 @@ python3 -m unittest discover -s tests -v
 7. AgentSpec 安全默认值和 schema 约束
 8. 工程文件生成稳定文件集
 9. Review / Writing / Research dry run 与反馈产物
-10. Runtime Permission Engine approval request
-11. Web / A2UI renderer 和 action event protocol
-12. UI demo action events -> AgentSpec -> dry run
-13. Conversation Orchestrator 自然语言多轮 Builder
-14. Conversation Runtime API 每轮返回 A2UI tree
-15. 内置 Web / A2UI Agent Builder 端到端生成 Agent
+10. SVN Review Runtime、fake SVN fixture、审批状态和显式记忆 apply/reject
+11. Runtime Permission Engine approval request
+12. Web / A2UI renderer 和 action event protocol
+13. UI demo action events -> AgentSpec -> dry run
+14. Conversation Orchestrator 自然语言多轮 Builder
+15. Conversation Runtime API 每轮返回 A2UI tree
+16. 内置 Web / A2UI Agent Builder 端到端生成 Agent
 ```
 
 ## MVP 验收矩阵
@@ -447,6 +495,7 @@ python3 -m unittest discover -s tests -v
 | 全量单测 | `python3 -m unittest discover -s tests -v` | 测试全部通过。 |
 | Review board | `python3 -m agent_foundry.cli board "我想做一个 SVN Review Agent" --llm-provider mock --stage feedback_protocol --format cli` | 展示动态问题、推荐理由和影响预览。 |
 | Review E2E | `python3 -m agent_foundry.cli new "我想做一个 SVN Review Agent，帮我审查 diff" --llm-provider mock --accept-recommended --dry-run --output ./workspace` | dry run 下生成 `review_report.md`、`findings.json`、`test_suggestions.md`、`feedback_requests.json`、`rule_patch_proposal.md`。 |
+| Review Runtime E2E | `python3 -m agent_foundry.cli review-svn ./tests/fixtures/fake_svn_working_copy --agent ./workspace/agents/svn-reviewer --output ./workspace/runs --llm-provider mock` | `review_svn_xxx` 下生成 review artifacts、`run_log.json`、`context_snapshot.json`、`pending_approvals.json`，且不修改源码。 |
 | Writing E2E | `python3 -m agent_foundry.cli new "我想做一个微信公众号写作 Agent，帮我把素材变成文章" --llm-provider mock --accept-recommended --dry-run --output ./workspace` | dry run 下生成 `topic_options.md`、`outline.md`、`article.md`、`publish_package.json`、`style_rule_patch.md`。 |
 | Research E2E | `python3 -m agent_foundry.cli new "我想做一个竞品研究 Agent，比较 Notion、飞书多维表格、Airtable" --type research-agent --llm-provider mock --accept-recommended --dry-run --output ./workspace` | dry run 下生成 `report.md`、`sources.json`、`research_plan.md`、`feedback_requests.json`，且 `sources.json` 保留来源字段。 |
 | Research real run protocol | 查看 `docs/agentspec_runtime.md` | 真实 Research run 需要额外生成 `evidence_matrix.json`、`run_log.json` 和 `raw_notes/`，但当前 MVP 尚未实现真实网页抓取。 |
@@ -464,12 +513,13 @@ python3 -m unittest discover -s tests -v
 ```text
 1. 真正 Web UI runtime
 2. 真正 A2UI runtime
-3. 真正调用 SVN 命令
-4. 真正运行 shell 测试
+3. 自动修改源码
+4. 自动运行 shell 测试
 5. 真正接入公众号 / 飞书
-6. 自动提交代码
+6. 自动提交代码，svn.commit 仍默认 deny
 7. 自动发布内容
 8. 静默修改长期记忆
+9. 长期后台 daemon
 ```
 
 所有高风险动作仍然应该通过 `tool_policy` 和 `human_feedback` 进入 ask / deny，而不是交给 LLM 自行决定。

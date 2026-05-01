@@ -14,15 +14,17 @@ SVN Review Agent 是最适合做 MVP 的 Agent。
 
 ### MVP 能力
 
-第一版不需要真的接 SVN，可以先用用户提供的 diff 文本。
+v0.1 支持用户提供 diff 文本的 dry run。v0.2 起，生成的 `review-agent` 可以通过 `review-svn` 读取真实或 fixture SVN working copy 的 `svn diff`。
 
 能力：
 
-1. 读取用户提供的 diff。
+1. 读取用户提供的 diff，或在受控 runtime 中读取 `svn diff`。
 2. 生成 review 报告。
 3. 每条 finding 有风险等级、证据、建议和置信度。
 4. 用户可以标记每条 finding。
 5. 根据反馈生成 `rule_patch_proposal.md` 候选，不自动写入 `learned_rules.md`。
+6. 用户显式执行 `memory-apply` 后，才追加更新 `learned_rules.md`。
+7. 下一次 `review-svn` 会加载 `learned_rules.md` 并记录到 run log。
 
 ### 输出产物
 
@@ -33,6 +35,12 @@ test_suggestions.md
 optional_patch.diff
 rule_patch_proposal.md
 feedback_requests.json
+run_log.json
+permission_checks.json
+context_snapshot.json
+pending_approvals.json
+approval_log.jsonl
+run_state.json
 ```
 
 ### 推荐默认配置
@@ -44,6 +52,8 @@ autonomy:
   level: L2
 tool_policy:
   svn.diff:
+    permission: allow
+  svn.status:
     permission: allow
   fs.read:
     permission: allow
@@ -89,14 +99,31 @@ output:
 5. 用户可打标签的 finding 列表。
 6. 候选 rule patch，且明确需要审批。
 
+### Runnable Harness 验收
+
+```bash
+python3 -m agent_foundry.cli review-svn ./tests/fixtures/fake_svn_working_copy \
+  --agent ./workspace/agents/svn-reviewer \
+  --output ./workspace/runs \
+  --llm-provider mock
+```
+
+系统应输出 `review_svn_xxx` 目录，包含 review artifacts、权限检查、上下文摘要、pending approval 和 run state。它不会修改源码，不会写 patch 到 working copy，不会执行 `svn commit`。如果测试有价值且 `shell.run_tests.permission == ask`，只生成审批请求。
+
+规则沉淀必须显式执行：
+
+```bash
+python3 -m agent_foundry.cli memory-review ./workspace/runs/review_svn_xxx
+python3 -m agent_foundry.cli memory-apply ./workspace/agents/svn-reviewer ./workspace/runs/review_svn_xxx --patch rule_patch_proposal.md
+```
+
 ### 后续增强
 
-1. 自动调用 `svn diff`。
-2. 搜索相关源码。
-3. 运行测试。
-4. 生成 patch。
-5. 接入项目规则库。
-6. 统计误报率和采纳率。
+1. 更深的跨文件代码搜索。
+2. 用户批准后的测试执行。
+3. 用户批准后的 patch 文件生成。
+4. 更细的项目规则库管理。
+5. 统计误报率和采纳率。
 
 ## 示例二：微信公众号写作 Agent
 

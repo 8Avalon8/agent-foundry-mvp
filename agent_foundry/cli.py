@@ -29,6 +29,15 @@ from agent_foundry.runtime.memory_engine import ALLOWED_REVIEW_LABELS, propose_m
 from agent_foundry.runtime.permission_engine import check_permission
 from agent_foundry.runtime.dry_run import load_agent_spec
 from agent_foundry.runtime.conversation_runtime import serve_conversation_api
+from agent_foundry.runtime.approval_store import record_approval_decision
+from agent_foundry.runtime.review_runtime import (
+    list_approvals,
+    memory_apply,
+    memory_reject,
+    memory_review,
+    resume_review_run,
+    run_review_svn,
+)
 from agent_foundry.renderers.a2ui_renderer import board_to_a2ui_tree
 from agent_foundry.renderers.action_protocol import apply_action_event
 from agent_foundry.renderers.web_renderer import board_to_web_view_model, render_web_html
@@ -133,6 +142,37 @@ def build_parser() -> argparse.ArgumentParser:
     p_permission.add_argument("agent_dir", type=Path)
     p_permission.add_argument("tool")
     p_permission.add_argument("--payload-json", default="{}", help="Optional JSON payload for the approval request")
+
+    p_review_svn = sub.add_parser("review-svn", help="Run a generated review-agent against an SVN working copy")
+    p_review_svn.add_argument("svn_working_copy", type=Path)
+    p_review_svn.add_argument("--agent", required=True, type=Path, help="Generated review-agent directory")
+    p_review_svn.add_argument("--output", type=Path, default=Path("workspace/runs"), help="Output root for review_svn runs")
+    _add_llm_args(p_review_svn)
+
+    p_approvals = sub.add_parser("approvals", help="List pending approvals for a run directory")
+    p_approvals.add_argument("run_dir", type=Path)
+
+    p_approve = sub.add_parser("approve", help="Record an approval decision for a run directory")
+    p_approve.add_argument("run_dir", type=Path)
+    p_approve.add_argument("approval_id")
+    p_approve.add_argument("--decision", required=True, choices=["approve_once", "reject", "show_impact", "add_to_whitelist"])
+
+    p_resume = sub.add_parser("resume", help="Resume a paused review run without re-running completed steps")
+    p_resume.add_argument("run_dir", type=Path)
+
+    p_memory_review = sub.add_parser("memory-review", help="Review a run's rule_patch_proposal.md")
+    p_memory_review.add_argument("run_dir", type=Path)
+
+    p_memory_apply = sub.add_parser("memory-apply", help="Explicitly apply a rule patch proposal to learned_rules.md")
+    p_memory_apply.add_argument("agent_dir", type=Path)
+    p_memory_apply.add_argument("run_dir", type=Path)
+    p_memory_apply.add_argument("--patch", default="rule_patch_proposal.md")
+
+    p_memory_reject = sub.add_parser("memory-reject", help="Reject a rule patch proposal and record the reason")
+    p_memory_reject.add_argument("agent_dir", type=Path)
+    p_memory_reject.add_argument("run_dir", type=Path)
+    p_memory_reject.add_argument("--patch", default="rule_patch_proposal.md")
+    p_memory_reject.add_argument("--reason", required=True)
 
     p_action = sub.add_parser("apply-action", help="Apply a UI action event to a saved PreSpecSession")
     p_action.add_argument("session", type=Path)
@@ -453,6 +493,49 @@ def cmd_permission_check(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_review_svn(args: argparse.Namespace) -> int:
+    provider = _resolve_provider(args)
+    run_dir = run_review_svn(args.svn_working_copy, args.agent, args.output, provider=provider)
+    print(f"Review SVN run output: {run_dir}")
+    return 0
+
+
+def cmd_approvals(args: argparse.Namespace) -> int:
+    print(json.dumps(list_approvals(args.run_dir), ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_approve(args: argparse.Namespace) -> int:
+    try:
+        entry = record_approval_decision(args.run_dir, args.approval_id, args.decision)
+    except (KeyError, ValueError) as exc:
+        raise SystemExit(str(exc)) from exc
+    print(json.dumps(entry, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_resume(args: argparse.Namespace) -> int:
+    print(json.dumps(resume_review_run(args.run_dir), ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_memory_review(args: argparse.Namespace) -> int:
+    print(memory_review(args.run_dir))
+    return 0
+
+
+def cmd_memory_apply(args: argparse.Namespace) -> int:
+    target = memory_apply(args.agent_dir, args.run_dir, args.patch)
+    print(f"Updated learned rules: {target}")
+    return 0
+
+
+def cmd_memory_reject(args: argparse.Namespace) -> int:
+    target = memory_reject(args.agent_dir, args.run_dir, args.patch, args.reason)
+    print(f"Recorded rejected rule patch: {target}")
+    return 0
+
+
 def cmd_apply_action(args: argparse.Namespace) -> int:
     session = load_session(args.session)
     try:
@@ -607,6 +690,20 @@ def main(argv: Optional[List[str]] = None) -> int:
         return cmd_writing_feedback(args)
     if args.command == "permission-check":
         return cmd_permission_check(args)
+    if args.command == "review-svn":
+        return cmd_review_svn(args)
+    if args.command == "approvals":
+        return cmd_approvals(args)
+    if args.command == "approve":
+        return cmd_approve(args)
+    if args.command == "resume":
+        return cmd_resume(args)
+    if args.command == "memory-review":
+        return cmd_memory_review(args)
+    if args.command == "memory-apply":
+        return cmd_memory_apply(args)
+    if args.command == "memory-reject":
+        return cmd_memory_reject(args)
     if args.command == "apply-action":
         return cmd_apply_action(args)
     if args.command == "ui-demo":

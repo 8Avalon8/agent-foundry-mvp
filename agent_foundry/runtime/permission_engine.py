@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, asdict
 from typing import Any, Dict, Literal
+from datetime import datetime
 import re
 
 Permission = Literal["allow", "ask", "deny"]
@@ -42,6 +43,8 @@ def check_permission(agent_spec: Dict[str, Any], tool: str, payload: Dict[str, A
             "payload": payload,
             "reason": reason,
             "options": ["approve_once", "reject", "show_impact", "add_to_whitelist"],
+            "created_at": datetime.now().isoformat(timespec="seconds"),
+            "status": "pending",
             "impact": {
                 "policy_path": f"tool_policy.{tool}.permission",
                 "current_permission": permission,

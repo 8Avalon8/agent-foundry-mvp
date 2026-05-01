@@ -53,13 +53,19 @@ inputs:
 tools:
   required_capabilities:
     - read_svn_diff
+    - read_svn_status
+    - parse_diff_files
     - read_files
     - search_code
-    - generate_markdown
-    - ask_user
+    - generate_review_report
+    - collect_human_feedback
     - propose_rule_patch
+    - apply_memory_patch
 tool_policy:
   svn.diff:
+    permission: allow
+    risk: low
+  svn.status:
     permission: allow
     risk: low
   fs.read:
@@ -271,7 +277,41 @@ agents/
 7. 记录用户反馈。
 8. 生成 rule patch 建议。
 
-第一版支持 deterministic dry run 和 LLM dry run。Review / Writing / Research Agent 都会生成声明的 dry run 产物；Research dry run 不执行真实网页访问，只模拟研究计划、报告、来源字段和反馈请求。不急着接真实 SVN、真实 shell、真实网页抓取或后台服务。
+第一版支持 deterministic dry run 和 LLM dry run。Review / Writing / Research Agent 都会生成声明的 dry run 产物；Research dry run 不执行真实网页访问，只模拟研究计划、报告、来源字段和反馈请求。
+
+v0.2 新增 SVN Review Runtime。它只服务 `review-agent`，入口是：
+
+```bash
+python3 -m agent_foundry.cli review-svn ./path/to/svn-working-copy \
+  --agent ./workspace/agents/svn-reviewer \
+  --output ./workspace/runs \
+  --llm-provider mock
+```
+
+运行目录必须包含：
+
+```text
+review_report.md
+findings.json
+feedback_requests.json
+test_suggestions.md
+rule_patch_proposal.md
+run_log.json
+permission_checks.json
+context_snapshot.json
+pending_approvals.json
+approval_log.jsonl
+run_state.json
+```
+
+Runtime 约束：
+
+- 只允许 registry 中声明的工具，LLM 不能发明新工具。
+- SVN 层只调用 `svn info`、`svn diff`、`svn status`，并使用 list args、`cwd`、`timeout` 和 captured output。
+- 文件上下文只能来自 SVN working copy 内部，并记录 byte count 和 truncation metadata。
+- 不修改源码，不写 patch 到 working copy，不执行 `svn commit`。
+- 测试建议只写入 `test_suggestions.md`；当 `shell.run_tests.permission == ask` 时，只写 pending approval。
+- `learned_rules.md` 会被加载进 review prompt，并记录到 `run_log.json` / `context_snapshot.json`。
 
 ## Permission Engine
 
@@ -307,16 +347,37 @@ approval request 支持动作：`approve_once`、`reject`、`show_impact`、`add
 ```yaml
 approval_request:
   id: approval_001
-  action: shell.run_tests
+  type: approval
+  tool: shell.run_tests
   risk: medium
-  command: "npm test"
+  payload:
+    command: "npm test"
   reason: "运行测试可以验证本次变更是否引入回归"
+  status: pending
   options:
-    - approve
-    - reject
     - approve_once
+    - reject
+    - show_impact
     - add_to_whitelist
 ```
+
+每个真实 run 目录还会保存：
+
+```text
+run_state.json
+pending_approvals.json
+approval_log.jsonl
+```
+
+审批相关 CLI：
+
+```bash
+agent-foundry approvals ./workspace/runs/review_svn_xxx
+agent-foundry approve ./workspace/runs/review_svn_xxx approval_shell_run_tests --decision reject
+agent-foundry resume ./workspace/runs/review_svn_xxx
+```
+
+`resume` 当前只做安全幂等恢复：没有 pending approval 时输出 `no pending approvals`；已 rejected 的 approval 不会执行对应步骤；已 approve_once 的 approval 只记录一次性批准，不重跑已经完成的步骤。
 
 ## UI Action Event
 
@@ -380,5 +441,16 @@ rule_patch_proposal:
 原则：
 
 - 任何长期规则更新都必须经过审批。
+- Review Runtime 的 `learned_rules.md` 只能通过显式 `memory-apply` 更新。
+- `memory-apply` 追加写入 `learned_rules.md` 和 `memory_log.jsonl`，不会覆盖既有规则。
+- `memory-reject` 追加写入 `rejected_rule_patches.jsonl`。
 - 权限策略变更必须经过审批。
 - 不允许记忆 credentials、secrets 或无关隐私内容。
+
+记忆相关 CLI：
+
+```bash
+agent-foundry memory-review ./workspace/runs/review_svn_xxx
+agent-foundry memory-apply ./workspace/agents/svn-reviewer ./workspace/runs/review_svn_xxx --patch rule_patch_proposal.md
+agent-foundry memory-reject ./workspace/agents/svn-reviewer ./workspace/runs/review_svn_xxx --reason "too broad"
+```

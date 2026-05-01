@@ -235,6 +235,23 @@ output_schema.json
 
 当前状态：已支持 dry run 输出、`feedback_requests.json`、finding label CLI 和 `rule_patch_proposal.md` 候选生成；不会自动写入长期规则。
 
+### Milestone 9.5：SVN Review Runtime v0.2
+
+目标：让生成出来的 `review-agent` 可以在受控边界内读取真实或 fixture SVN working copy。
+
+完成标准：
+
+1. 读取 `agent.yaml`，确认 `agent.agent.type == review-agent`。
+2. 通过 capability / tool registry 解析所需能力，未知能力直接失败。
+3. 在 `tool_policy` 下执行 `svn diff` / `svn status`，`svn.commit` 仍默认 `deny`。
+4. 解析 changed files，只读取 SVN working copy 内的受限文件上下文。
+5. 加载 `learned_rules.md`，并记录到 `run_log.json` 和 `context_snapshot.json`。
+6. 生成 `review_report.md`、`findings.json`、`feedback_requests.json`、`test_suggestions.md`、`rule_patch_proposal.md`。
+7. 对 `shell.run_tests.permission == ask` 只生成 pending approval，不自动运行测试。
+8. Rule Patch 只能通过显式 `memory-apply` 追加到 `learned_rules.md`。
+
+当前状态：已完成。当前实现支持真实 `svn` 命令，也提供 `tests/fixtures/fake_svn_working_copy` 用于无 SVN 安装的本地验收。源码修改、自动测试执行、自动 commit 和后台 daemon 仍不在本 milestone 内。
+
 ### Milestone 10：微信公众号写作 Agent MVP
 
 目标：验证创作型 Agent。
@@ -325,7 +342,7 @@ output_schema.json
 
 ## 下一步建议
 
-当前 T0-T16 MVP 已进入验收收口；下一步优先做全量端到端命令验证和生成物检查。真实 Web UI runtime、真实 A2UI runtime、真实 SVN 调用、真实公众号发布和真实网页抓取仍在 MVP 边界外。
+当前 T0-T16 和 Milestone 9.5 已进入验收收口；下一步优先做更多真实 SVN working copy 场景和错误恢复验证。真实 Web UI runtime、官方 A2UI SDK、自动源码修改、自动测试执行、真实公众号发布和真实网页抓取仍在 MVP 边界外。
 
 ## 第一版暂不做
 
@@ -334,7 +351,7 @@ output_schema.json
 1. 真正 Web UI。
 2. 完整 A2UI 集成。
 3. 真正接入微信公众号。
-4. 真正自动调用 SVN。
+4. 自动修改源码。
 5. 真正长期后台运行。
 6. 真正多 Agent 协作。
 7. 自动发布。
@@ -342,7 +359,7 @@ output_schema.json
 9. 复杂数据库。
 10. 复杂权限沙箱。
 
-第一版只保证：
+第一版已升级为 v0.2 runnable harness，当前保证：
 
 ```text
 自然语言需求
@@ -351,6 +368,7 @@ output_schema.json
   -> AgentSpec
   -> 工程文件
   -> dry run
+  -> review-agent 可受控读取 SVN diff 并生成真实 run 产物
 ```
 
 Web / A2UI 并不是终局外的内容，当前已按 `docs/ultimate_task_todo.md` 中的 T13-T16 落地到协议和 demo 层：

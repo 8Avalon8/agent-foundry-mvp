@@ -145,15 +145,19 @@ def _compile_review_agent(session: PreSpecSession, agent_name: str | None) -> Di
             "tools": {
                 "required_capabilities": [
                     "read_svn_diff",
+                    "read_svn_status",
+                    "parse_diff_files",
                     "read_files",
                     "search_code",
-                    "generate_markdown",
-                    "ask_user",
+                    "generate_review_report",
+                    "collect_human_feedback",
                     "propose_rule_patch",
+                    "apply_memory_patch",
                 ]
             },
             "tool_policy": {
                 "svn.diff": {"permission": "allow", "risk": "low"},
+                "svn.status": {"permission": "allow", "risk": "low"},
                 "fs.read": {"permission": "allow", "scope": read_scope, "risk": "low_to_medium"},
                 "code.search": {"permission": code_search_permission, "scope": read_scope, "risk": "low_to_medium"},
                 "shell.run_tests": {"permission": test_permission, "allowed_commands": whitelist, "risk": "medium"},
