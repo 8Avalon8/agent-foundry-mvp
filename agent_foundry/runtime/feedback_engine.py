@@ -16,3 +16,11 @@ def finding_feedback_request(finding: Dict[str, Any]) -> Dict[str, Any]:
 
 def batch_feedback_requests(findings: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return [finding_feedback_request(f) for f in findings]
+
+
+def topic_selection_request(topics: List[str]) -> Dict[str, Any]:
+    return {
+        "type": "topic_selection",
+        "prompt": "请选择一个选题方向，或提供自然语言调整意见。",
+        "options": [{"id": str(index), "title": title} for index, title in enumerate(topics, start=1)],
+    }

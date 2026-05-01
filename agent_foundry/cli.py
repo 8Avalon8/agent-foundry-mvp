@@ -24,7 +24,7 @@ from agent_foundry.builder.file_generator import generate_agent_files
 from agent_foundry.builder.llm_builder import apply_natural_language_update, create_session_with_llm
 from agent_foundry.llm import LLMProviderError, provider_from_name
 from agent_foundry.runtime.dry_run import dry_run
-from agent_foundry.runtime.memory_engine import ALLOWED_REVIEW_LABELS, propose_memory_patch
+from agent_foundry.runtime.memory_engine import ALLOWED_REVIEW_LABELS, propose_memory_patch, propose_style_patch
 
 
 def _add_llm_args(parser: argparse.ArgumentParser) -> None:
@@ -111,6 +111,11 @@ def build_parser() -> argparse.ArgumentParser:
     p_feedback.add_argument("run_dir", type=Path)
     p_feedback.add_argument("--label", action="append", default=[], help="Finding label in the form F001=accepted")
     p_feedback.add_argument("--reason", action="append", default=[], help="Optional reason in the form F001=explanation")
+
+    p_writing_feedback = sub.add_parser("writing-feedback", help="Apply writing-agent topic/style feedback to a dry-run directory")
+    p_writing_feedback.add_argument("run_dir", type=Path)
+    p_writing_feedback.add_argument("--topic", required=True, help="Selected topic number or exact topic text")
+    p_writing_feedback.add_argument("--style-feedback", default="", help="Natural-language style feedback to convert into a style patch candidate")
 
     return parser
 
@@ -366,6 +371,32 @@ def cmd_feedback(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_writing_feedback(args: argparse.Namespace) -> int:
+    topics_path = args.run_dir / "topic_options.json"
+    if not topics_path.exists():
+        raise SystemExit(f"topic_options.json not found: {topics_path}")
+    topics = json.loads(topics_path.read_text(encoding="utf-8"))
+    selected_topic = _resolve_topic_selection(topics, args.topic)
+    selected = {"topic": selected_topic, "style_feedback": args.style_feedback}
+    (args.run_dir / "selected_topic.json").write_text(json.dumps(selected, ensure_ascii=False, indent=2), encoding="utf-8")
+    patch = propose_style_patch(selected_topic, args.style_feedback)
+    (args.run_dir / "style_rule_patch.md").write_text(patch, encoding="utf-8")
+    print(f"Saved selected topic: {args.run_dir / 'selected_topic.json'}")
+    print(f"Updated style patch proposal: {args.run_dir / 'style_rule_patch.md'}")
+    return 0
+
+
+def _resolve_topic_selection(topics: List[str], raw: str) -> str:
+    if raw.isdigit():
+        index = int(raw) - 1
+        if 0 <= index < len(topics):
+            return topics[index]
+        raise SystemExit(f"Topic index out of range: {raw}")
+    if raw in topics:
+        return raw
+    raise SystemExit(f"Unknown topic selection: {raw}")
+
+
 def _parse_key_value_args(items: List[str], flag: str) -> Dict[str, str]:
     result: Dict[str, str] = {}
     for item in items:
@@ -391,6 +422,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         return cmd_update_session(args)
     if args.command == "feedback":
         return cmd_feedback(args)
+    if args.command == "writing-feedback":
+        return cmd_writing_feedback(args)
     parser.print_help()
     return 2
 

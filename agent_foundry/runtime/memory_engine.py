@@ -31,3 +31,20 @@ def propose_memory_patch(feedback_items: List[Dict]) -> str:
     if len(lines) == 4:
         lines.append("暂无可沉淀规则。\n")
     return "\n".join(lines)
+
+
+def propose_style_patch(selected_topic: str, feedback: str) -> str:
+    lines = [
+        "# Style Rule Patch Proposal",
+        "",
+        "以下内容必须经用户确认后才能写入长期风格记忆；本文件只是候选补丁，不会自动更新 style_rules.md。",
+        "",
+        "```diff",
+        f"+ 用户选择选题方向：{selected_topic}",
+    ]
+    if feedback:
+        lines.append(f"+ 写作反馈应转化为风格约束：{feedback}")
+    else:
+        lines.append("+ 用户未提供额外风格反馈；暂不新增具体风格规则。")
+    lines.extend(["```", ""])
+    return "\n".join(lines)

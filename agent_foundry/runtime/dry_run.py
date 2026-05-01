@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 
 import yaml
 
-from .feedback_engine import batch_feedback_requests
+from .feedback_engine import batch_feedback_requests, topic_selection_request
 
 
 def load_agent_spec(agent_dir: Path) -> Dict[str, Any]:
@@ -152,8 +152,14 @@ def run_writing_dry_run_llm(spec: Dict[str, Any], material: str, run_dir: Path, 
         temperature=0.3,
     )
     package = result.get("publish_package", {})
+    topics = result.get("topic_options", [])
     (run_dir / "topic_options.md").write_text(
-        "# Topic Options\n\n" + "\n".join(f"{i}. {t}" for i, t in enumerate(result.get("topic_options", []), 1)) + "\n",
+        "# Topic Options\n\n" + "\n".join(f"{i}. {t}" for i, t in enumerate(topics, 1)) + "\n",
+        encoding="utf-8",
+    )
+    (run_dir / "topic_options.json").write_text(json.dumps(topics, ensure_ascii=False, indent=2), encoding="utf-8")
+    (run_dir / "topic_selection_request.json").write_text(
+        json.dumps(topic_selection_request(topics), ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
     (run_dir / "outline.md").write_text("# Outline\n\n" + "\n".join(f"- {x}" for x in result.get("outline", [])) + "\n", encoding="utf-8")
@@ -374,6 +380,11 @@ def run_writing_dry_run(spec: Dict[str, Any], material: str, run_dir: Path) -> P
 """
 
     (run_dir / "topic_options.md").write_text("# Topic Options\n\n" + "\n".join(f"{i}. {t}" for i, t in enumerate(topics, 1)) + "\n", encoding="utf-8")
+    (run_dir / "topic_options.json").write_text(json.dumps(topics, ensure_ascii=False, indent=2), encoding="utf-8")
+    (run_dir / "topic_selection_request.json").write_text(
+        json.dumps(topic_selection_request(topics), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
     (run_dir / "outline.md").write_text("# Outline\n\n" + "\n".join(f"- {x}" for x in outline) + "\n", encoding="utf-8")
     (run_dir / "article.md").write_text(draft, encoding="utf-8")
     (run_dir / "publish_package.json").write_text(json.dumps(publish_package, ensure_ascii=False, indent=2), encoding="utf-8")

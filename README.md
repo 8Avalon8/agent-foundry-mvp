@@ -256,6 +256,18 @@ python3 -m agent_foundry.cli feedback ./workspace/agents/svn-reviewer/runs/dry_r
 
 支持标签：`accepted`、`false_positive`、`too_minor`、`duplicate`、`needs_more_evidence`。规则补丁只会写入 `rule_patch_proposal.md`，不会自动更新长期规则。
 
+### Writing feedback 选题和风格闭环
+
+writing-agent dry run 会生成 `topic_options.md`、`topic_selection_request.json`、`outline.md`、`article.md`、`publish_package.json` 和 `style_rule_patch.md`。用户可以选择选题并提交风格反馈：
+
+```bash
+python3 -m agent_foundry.cli writing-feedback ./workspace/agents/wechat-ai-writer/runs/dry_run_xxx \
+  --topic 2 \
+  --style-feedback "标题更克制一点，多保留真实工作流细节"
+```
+
+风格规则只会更新 `style_rule_patch.md` 候选，不会自动写入 `style_rules.md`。
+
 ### LLM dry run
 
 ```bash
