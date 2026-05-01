@@ -16,7 +16,7 @@ def create_session(user_goal: str, explicit_type: Optional[str] = None) -> PreSp
     session = PreSpecSession(user_goal=user_goal, inferred_agent_type=parsed.likely_agent_type)
     session.metadata["builder_mode"] = "offline"
     session.metadata["parsed_intent"] = parsed.to_dict()
-    session.unresolved = required_question_ids(parsed.likely_agent_type)
+    session.refresh_unresolved(required_question_ids(parsed.likely_agent_type))
     return session
 
 
@@ -305,5 +305,4 @@ def render_board_html(board: DecisionBoard) -> str:
 </main>
 </body>
 </html>"""
-
 

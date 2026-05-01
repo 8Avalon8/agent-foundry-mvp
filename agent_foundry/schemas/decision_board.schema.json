@@ -2,17 +2,60 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "DecisionBoard",
   "type": "object",
-  "required": ["surface_type", "session_id", "stage", "title", "summary", "presets", "questions"],
+  "required": ["surface_type", "session_id", "stage", "title", "summary", "presets", "questions", "decisions", "impact_preview", "next_actions"],
+  "additionalProperties": true,
   "properties": {
     "surface_type": {"const": "agent_design_board"},
     "session_id": {"type": "string"},
     "stage": {"type": "string"},
     "title": {"type": "string"},
-    "summary": {"type": "object"},
-    "presets": {"type": "array"},
-    "questions": {"type": "array"},
+    "summary": {
+      "type": "object",
+      "required": ["title", "agent_type", "risk_level", "summary"],
+      "properties": {
+        "title": {"type": "string"},
+        "agent_type": {"type": "string"},
+        "risk_level": {"enum": ["", "low", "low_to_medium", "medium", "medium_high", "high", "critical"]},
+        "summary": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": true
+    },
+    "presets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "description", "recommended", "summary", "decisions", "risk_level"],
+        "properties": {
+          "id": {"type": "string"},
+          "title": {"type": "string"},
+          "description": {"type": "string"},
+          "recommended": {"type": "boolean"},
+          "summary": {"type": "array", "items": {"type": "string"}},
+          "decisions": {"type": "object"},
+          "risk_level": {"enum": ["", "low", "low_to_medium", "medium", "medium_high", "high", "critical"]}
+        },
+        "additionalProperties": true
+      }
+    },
+    "questions": {
+      "type": "array",
+      "items": {"$ref": "decision_question.schema.json"}
+    },
     "decisions": {"type": "object"},
-    "impact_preview": {"type": "array"},
+    "impact_preview": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "value", "reason", "risk_level"],
+        "properties": {
+          "path": {"type": "string"},
+          "value": {},
+          "reason": {"type": "string"},
+          "risk_level": {"enum": ["", "low", "low_to_medium", "medium", "medium_high", "high", "critical"]}
+        },
+        "additionalProperties": true
+      }
+    },
     "next_actions": {"type": "array", "items": {"type": "string"}}
   }
 }

@@ -63,6 +63,9 @@ class DecisionQuestion:
     def to_dict(self) -> JSONDict:
         data = asdict(self)
         data["options"] = [o.to_dict() for o in self.options]
+        # `type` is kept as a wire-format alias for older docs/renderers while
+        # `input_type` remains the Python model field.
+        data["type"] = self.input_type
         return data
 
     @classmethod
@@ -179,6 +182,11 @@ class PreSpecSession:
         )
         if question_id in self.unresolved:
             self.unresolved = [x for x in self.unresolved if x != question_id]
+        self.updated_at = utc_now_iso()
+
+    def refresh_unresolved(self, required_question_ids: List[str]) -> None:
+        """Rebuild pending required decisions from the currently active graph."""
+        self.unresolved = [qid for qid in required_question_ids if qid not in self.decisions]
         self.updated_at = utc_now_iso()
 
     def get_value(self, question_id: str, default: Any = None) -> Any:

@@ -10,9 +10,11 @@ from pathlib import Path
 from unittest.mock import patch
 
 from agent_foundry.builder.decision_board import apply_recommended_defaults, build_decision_board
+from agent_foundry.builder.decision_board import create_session, load_session, save_session
 from agent_foundry.builder.agentspec_compiler import compile_agentspec
 from agent_foundry.builder.file_generator import generate_agent_files
 from agent_foundry.builder.llm_builder import apply_natural_language_update, create_session_with_llm
+from agent_foundry.builder.models import DecisionQuestion
 from agent_foundry.llm.mock_provider import MockLLMProvider
 from agent_foundry.llm.provider import provider_from_name
 from agent_foundry.runtime.dry_run import dry_run
@@ -73,6 +75,56 @@ class LLMUpgradeTest(unittest.TestCase):
         self.assertEqual(provider.model, "test-model")
         self.assertEqual(captured["api_key"], "test-key")
         self.assertEqual(captured["base_url"], "https://gateway.example/v1")
+
+    def test_decision_question_accepts_type_alias_and_writes_both_names(self) -> None:
+        question = DecisionQuestion.from_dict(
+            {
+                "id": "run_tests",
+                "title": "是否允许运行测试命令？",
+                "type": "single_choice",
+                "stage": "tool_permissions",
+                "recommended": "ask",
+                "options": [{"id": "ask", "label": "每次运行前询问"}],
+                "affects": ["tool_policy.shell.run_tests"],
+            }
+        )
+        data = question.to_dict()
+        self.assertEqual(question.input_type, "single_choice")
+        self.assertEqual(data["input_type"], "single_choice")
+        self.assertEqual(data["type"], "single_choice")
+
+    def test_session_round_trip_preserves_decisions_inputs_and_unresolved(self) -> None:
+        session = create_session("我想做一个 SVN Review Agent")
+        self.assertIn("run_tests", session.unresolved)
+        session.apply_decision("run_tests", "allow_whitelist", inputs={"test_command_whitelist": "python3 -m unittest"})
+        self.assertNotIn("run_tests", session.unresolved)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            session_path = Path(tmp) / "session.json"
+            save_session(session, session_path)
+            loaded = load_session(session_path)
+
+        self.assertEqual(loaded.get_value("run_tests"), "allow_whitelist")
+        self.assertEqual(loaded.get_inputs("run_tests")["test_command_whitelist"], "python3 -m unittest")
+        self.assertEqual(loaded.unresolved, session.unresolved)
+
+    def test_schema_declares_question_constraints_needed_by_docs(self) -> None:
+        schema_path = Path(__file__).resolve().parents[1] / "agent_foundry" / "schemas" / "decision_question.schema.json"
+        schema = json.loads(schema_path.read_text(encoding="utf-8"))
+        for field in [
+            "required",
+            "recommended",
+            "recommendation_reason",
+            "risk_level",
+            "options",
+            "affects",
+        ]:
+            self.assertIn(field, schema["required"])
+            self.assertIn(field, schema["properties"])
+        requires_input = schema["properties"]["options"]["items"]["properties"]["requires_input"]
+        self.assertIn("id", requires_input["required"])
+        self.assertIn("type", requires_input["required"])
+        self.assertIn("placeholder", requires_input["required"])
 
 
 if __name__ == "__main__":

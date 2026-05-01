@@ -2,7 +2,8 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "PreSpecSession",
   "type": "object",
-  "required": ["id", "user_goal", "inferred_agent_type", "current_stage", "decisions"],
+  "required": ["id", "user_goal", "inferred_agent_type", "current_stage", "decisions", "unresolved", "metadata", "created_at", "updated_at"],
+  "additionalProperties": true,
   "properties": {
     "id": {"type": "string"},
     "user_goal": {"type": "string"},
@@ -13,17 +14,22 @@
       "type": "object",
       "additionalProperties": {
         "type": "object",
-        "required": ["value", "source", "confidence"],
+        "required": ["value", "source", "confidence", "note", "inputs"],
+        "additionalProperties": true,
         "properties": {
           "value": {},
-          "source": {"type": "string"},
-          "confidence": {"type": "string"},
+          "source": {"enum": ["user_selected", "recommended_accepted", "default", "inferred", "llm_recommended_preset", "llm_interpreted_user_instruction"]},
+          "confidence": {"enum": ["low", "medium", "high"]},
           "note": {"type": "string"},
           "inputs": {"type": "object"}
         }
       }
     },
-    "unresolved": {"type": "array", "items": {"type": "string"}},
+    "unresolved": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Required visible question ids that do not yet have a decision. Rebuilt from the active decision graph and cleared when apply_decision records an answer."
+    },
     "metadata": {"type": "object"},
     "created_at": {"type": "string"},
     "updated_at": {"type": "string"}

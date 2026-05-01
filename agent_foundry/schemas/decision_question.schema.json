@@ -2,29 +2,48 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "DecisionQuestion",
   "type": "object",
-  "required": ["id", "title", "input_type", "stage"],
+  "required": ["id", "title", "input_type", "stage", "required", "recommended", "recommendation_reason", "risk_level", "options", "affects"],
+  "additionalProperties": true,
   "properties": {
     "id": {"type": "string"},
     "title": {"type": "string"},
     "input_type": {"enum": ["single_choice", "multi_choice", "text_input", "path_input", "number_input", "toggle", "permission_matrix", "ranked_choice", "approval", "diff_review", "checklist"]},
+    "type": {"enum": ["single_choice", "multi_choice", "text_input", "path_input", "number_input", "toggle", "permission_matrix", "ranked_choice", "approval", "diff_review", "checklist"]},
     "stage": {"type": "string"},
     "required": {"type": "boolean"},
-    "recommended": {},
+    "recommended": {
+      "description": "Recommended value for the question; may be a scalar, list, object, boolean, or null.",
+      "type": ["string", "number", "boolean", "array", "object", "null"]
+    },
     "recommendation_reason": {"type": "string"},
-    "risk_level": {"type": "string"},
+    "risk_level": {"enum": ["", "low", "low_to_medium", "medium", "medium_high", "high", "critical"]},
+    "help_text": {"type": "string"},
+    "placeholder": {"type": "string"},
+    "default": {},
+    "visible_when": {"type": ["object", "null"]},
     "options": {
       "type": "array",
       "items": {
         "type": "object",
         "required": ["id", "label"],
+        "additionalProperties": true,
         "properties": {
           "id": {"type": "string"},
           "label": {"type": "string"},
           "description": {"type": "string"},
           "recommended": {"type": "boolean"},
           "tradeoff": {"type": "string"},
-          "requires_input": {"type": ["object", "null"]},
-          "risk_level": {"type": "string"}
+          "requires_input": {
+            "type": ["object", "null"],
+            "required": ["id", "type", "placeholder"],
+            "properties": {
+              "id": {"type": "string"},
+              "type": {"enum": ["single_choice", "multi_choice", "text_input", "path_input", "number_input", "toggle", "permission_matrix", "ranked_choice", "approval", "diff_review", "checklist"]},
+              "placeholder": {"type": "string"}
+            },
+            "additionalProperties": true
+          },
+          "risk_level": {"enum": ["", "low", "low_to_medium", "medium", "medium_high", "high", "critical"]}
         }
       }
     },
