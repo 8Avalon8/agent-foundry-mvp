@@ -152,6 +152,27 @@ python3 -m agent_foundry.cli chat-build "我想做一个 SVN Review Agent，帮�
 - 自然语言回答先尽量映射到当前问题的 action event，再应用 LLM session patch。
 - 信息足够明确后自动产出 AgentSpec、Agent 工程和 dry run。
 
+`agent_foundry.runtime.conversation_runtime` 提供 Web / A2UI 客户端可调用的运行时 facade：
+
+```text
+POST /conversation/start
+  -> assistant_message + session_id + a2ui_tree
+
+POST /conversation/respond
+  -> assistant_message + updated a2ui_tree + status
+```
+
+`respond` 支持两类输入：
+
+- `action_event`：用户在 A2UI 组件上的点击 / 输入。
+- `natural_language_reply`：用户直接用自然语言补充偏好。
+
+当 `status=completed` 时，响应体还会包含：
+
+- `agent_dir`
+- `run_dir`
+- `agent_spec_summary`
+
 ## 分阶段决策图
 
 ### Stage 1：基础目标确认

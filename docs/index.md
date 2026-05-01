@@ -39,6 +39,7 @@
   -> Pre-Spec Decision Board
   -> PreSpecSession
   -> Conversation Orchestrator / Action Events
+  -> Conversation Runtime API / A2UI Tree
   -> Agent Design Card
   -> AgentSpec v0.1
   -> Agent 工程文件
@@ -47,7 +48,7 @@
   -> Rule Patch / Style Patch 候选
 ```
 
-可用命令和验收矩阵见根目录 [README.md](../README.md) 与 [PROJECT_STATUS.md](../PROJECT_STATUS.md)。规划文档中 T0-T16 和 Conversation Orchestrator 是当前 MVP 收束范围；Web / A2UI 已落到声明式 renderer、action protocol 和 UI demo，尚不包含真实托管 Web UI runtime 或真实 A2UI runtime 集成。
+可用命令和验收矩阵见根目录 [README.md](../README.md) 与 [PROJECT_STATUS.md](../PROJECT_STATUS.md)。规划文档中 T0-T16 和 Conversation Orchestrator / Runtime API 是当前 MVP 收束范围；Web / A2UI 已落到声明式 renderer、action protocol、每轮 A2UI response 和 UI demo，尚不包含 polished 托管 Web UI 或真实 A2UI runtime 集成。
 
 ## Source of Truth
 

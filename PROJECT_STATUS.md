@@ -73,13 +73,14 @@ The LLM proposes and explains. Deterministic code still compiles and enforces:
 | Review agent E2E | `python3 -m agent_foundry.cli new "我想做一个 SVN Review Agent，帮我审查 diff" --llm-provider mock --accept-recommended --dry-run --output ./workspace` | `review_report.md`, `findings.json`, `test_suggestions.md`, `feedback_requests.json`, `rule_patch_proposal.md`. |
 | Writing agent E2E | `python3 -m agent_foundry.cli new "我想做一个微信公众号写作 Agent，帮我把素材变成文章" --llm-provider mock --accept-recommended --dry-run --output ./workspace` | `topic_options.md`, `outline.md`, `article.md`, `publish_package.json`, `style_rule_patch.md`. |
 | Safety | Inspect generated `agent.yaml` and `permission_checks.json` | No silent high-risk `allow`; memory updates require approval. |
-| Conversation Builder | `python3 -m agent_foundry.cli chat-build "我想做一个 SVN Review Agent，帮我审查 diff" --llm-provider mock --reply "都按推荐" --output ./workspace` | Natural-language goal/reply produce Agent files and dry run. |
+| Conversation Builder | `python3 -m agent_foundry.cli chat-build "我想做一个 SVN Review Agent，帮我审查 diff" --llm-provider mock --reply "都按推荐" --format a2ui-json --output ./workspace` | Natural-language goal/reply produce Agent files, dry run, and renderable A2UI tree. |
+| Conversation Runtime | `python3 -m agent_foundry.cli serve-conversation --llm-provider mock --output ./workspace/conversation_api` | Web/A2UI clients can call `/conversation/start` and `/conversation/respond`. |
 
-Last verified on 2026-05-01: unit tests passed; mock board, review-agent E2E, writing-agent E2E, UI demo E2E, Conversation Builder, and generated permission checks passed.
+Last verified on 2026-05-01: unit tests passed; mock board, review-agent E2E, writing-agent E2E, UI demo E2E, Conversation Builder, Conversation Runtime, and generated permission checks passed.
 
 ## Next
 
-T0-T16 plus the Conversation Orchestrator are implemented for the MVP boundary. Remaining future work is a real hosted Web UI runtime, real A2UI runtime integration, real SVN commands, real publishing, and long-running background operation.
+T0-T16 plus the Conversation Orchestrator / Runtime API are implemented for the MVP boundary. Remaining future work is a polished hosted Web UI, real A2UI runtime integration, real SVN commands, real publishing, and long-running background operation.
 
 ## Tests
 

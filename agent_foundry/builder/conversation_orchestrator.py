@@ -19,6 +19,7 @@ from .file_generator import generate_agent_files
 from .llm_builder import apply_natural_language_update, create_session_with_llm
 from .models import DecisionQuestion, PreSpecSession
 from .presets import get_recommended_preset
+from agent_foundry.renderers.a2ui_renderer import board_to_a2ui_tree
 from agent_foundry.renderers.action_protocol import apply_action_event
 from agent_foundry.runtime.dry_run import dry_run
 
@@ -34,17 +35,23 @@ class ConversationResult:
     next_question: Optional[DecisionQuestion] = None
     events: List[JSONDict] = field(default_factory=list)
     applied_updates: List[JSONDict] = field(default_factory=list)
+    a2ui_tree: Optional[JSONDict] = None
     agent_dir: Optional[Path] = None
     run_dir: Optional[Path] = None
 
     def to_dict(self) -> JSONDict:
+        a2ui_tree = self.a2ui_tree if self.a2ui_tree is not None else conversation_a2ui_tree(self.session)
         return {
             "status": self.status,
+            "assistant_message": self.message,
             "message": self.message,
+            "session_id": self.session.id,
             "session": self.session.to_dict(),
             "next_question": self.next_question.to_dict() if self.next_question else None,
+            "a2ui_tree": a2ui_tree,
             "events": self.events,
             "applied_updates": self.applied_updates,
+            "agent_spec_summary": agent_spec_summary(self.session) if self.status in {"completed", "ready_to_build"} else None,
             "agent_dir": str(self.agent_dir) if self.agent_dir else None,
             "run_dir": str(self.run_dir) if self.run_dir else None,
         }
@@ -132,6 +139,61 @@ def handle_user_reply(
     )
 
 
+def handle_action_event(
+    session: PreSpecSession,
+    event: JSONDict,
+    *,
+    output_root: Optional[Path] = None,
+    agent_name: Optional[str] = None,
+    run_dry_run: bool = True,
+    provider: Optional[LLMProvider] = None,
+) -> ConversationResult:
+    session.metadata["conversation_mode"] = True
+    result = apply_action_event(session, event)
+    if result.status == "rejected":
+        return ConversationResult(
+            status="needs_clarification",
+            message=result.message,
+            session=session,
+            next_question=next_question(session),
+            events=[result.to_dict()],
+        )
+    if result.status == "requires_approval":
+        return ConversationResult(
+            status="requires_approval",
+            message=result.message,
+            session=session,
+            next_question=next_question(session),
+            events=[result.to_dict()],
+        )
+    _advance_past_completed_stages(session)
+    question = next_question(session)
+    if question is not None:
+        return ConversationResult(
+            status="asking",
+            message=_question_prompt(question),
+            session=session,
+            next_question=question,
+            events=[result.to_dict()],
+        )
+    if output_root is None:
+        return ConversationResult(
+            status="ready_to_build",
+            message="关键决策已经足够明确，可以编译 AgentSpec 并生成 dry run。",
+            session=session,
+            events=[result.to_dict()],
+        )
+    agent_dir, run_dir = build_agent_from_conversation(session, output_root, agent_name=agent_name, run_dry_run=run_dry_run, provider=provider)
+    return ConversationResult(
+        status="completed",
+        message="关键决策已确认，AgentSpec、Agent 工程和 dry run 已生成。",
+        session=session,
+        events=[result.to_dict()],
+        agent_dir=agent_dir,
+        run_dir=run_dir,
+    )
+
+
 def build_agent_from_conversation(
     session: PreSpecSession,
     output_root: Path,
@@ -154,6 +216,21 @@ def build_agent_from_conversation(
     )
     run_dir = dry_run(agent_dir, provider=provider) if run_dry_run else None
     return agent_dir, run_dir
+
+
+def conversation_a2ui_tree(session: PreSpecSession) -> JSONDict:
+    return board_to_a2ui_tree(build_decision_board(PreSpecSession.from_dict(session.to_dict())))
+
+
+def agent_spec_summary(session: PreSpecSession) -> JSONDict:
+    spec = compile_agentspec(session)
+    return {
+        "agent": spec.get("agent", {}),
+        "tool_policy": spec.get("tool_policy", {}),
+        "human_feedback": spec.get("human_feedback", {}),
+        "memory": spec.get("memory", {}),
+        "output": spec.get("output", {}),
+    }
 
 
 def next_question(session: PreSpecSession) -> Optional[DecisionQuestion]:

@@ -12,6 +12,7 @@ Agent Foundry 的主链路是：
   -> Pre-Spec Decision Board：可交互决策面板
   -> PreSpecSession：保存用户选择和未确认项
   -> Conversation Orchestrator：自然语言多轮追问和 action event 回放
+  -> Conversation Runtime API：每轮返回 assistant_message + A2UI tree
   -> Agent Design Card：阶段性确认卡
   -> AgentSpec v0.1：正式 Agent 蓝图
   -> Compiler：编译成工程文件

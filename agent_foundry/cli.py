@@ -28,6 +28,7 @@ from agent_foundry.runtime.dry_run import dry_run
 from agent_foundry.runtime.memory_engine import ALLOWED_REVIEW_LABELS, propose_memory_patch, propose_style_patch
 from agent_foundry.runtime.permission_engine import check_permission
 from agent_foundry.runtime.dry_run import load_agent_spec
+from agent_foundry.runtime.conversation_runtime import serve_conversation_api
 from agent_foundry.renderers.a2ui_renderer import board_to_a2ui_tree
 from agent_foundry.renderers.action_protocol import apply_action_event
 from agent_foundry.renderers.web_renderer import board_to_web_view_model, render_web_html
@@ -148,8 +149,16 @@ def build_parser() -> argparse.ArgumentParser:
     p_chat.add_argument("--type", dest="agent_type", help="Optional explicit agent type for a new conversation")
     p_chat.add_argument("--name", dest="agent_name", help="Agent folder/name override when the conversation completes")
     p_chat.add_argument("--output", type=Path, default=Path("workspace"), help="Output root for session, generated Agent, and dry run")
+    p_chat.add_argument("--format", choices=["json", "a2ui-json"], default="json", help="Response shape for this conversation turn")
     p_chat.add_argument("--no-dry-run", action="store_true", help="Compile the Agent without running dry run after decisions are complete")
     _add_llm_args(p_chat)
+
+    p_serve = sub.add_parser("serve-conversation", help="Serve Conversation Runtime API for Web/A2UI clients")
+    p_serve.add_argument("--host", default="127.0.0.1")
+    p_serve.add_argument("--port", type=int, default=8765)
+    p_serve.add_argument("--output", type=Path, default=Path("workspace/conversation_api"))
+    p_serve.add_argument("--no-dry-run", action="store_true", help="Compile without dry run when a conversation completes")
+    _add_llm_args(p_serve)
 
     return parser
 
@@ -482,7 +491,7 @@ def cmd_chat_build(args: argparse.Namespace) -> int:
                 session=session,
                 next_question=question,
             )
-        print(json.dumps(_conversation_output(result, session_path), ensure_ascii=False, indent=2))
+        print(json.dumps(_conversation_output(result, session_path, args.format), ensure_ascii=False, indent=2))
         return 0
 
     for reply in replies:
@@ -496,14 +505,43 @@ def cmd_chat_build(args: argparse.Namespace) -> int:
         )
         session = result.session
         save_session(session, session_path)
-    print(json.dumps(_conversation_output(result, session_path), ensure_ascii=False, indent=2))
+    print(json.dumps(_conversation_output(result, session_path, args.format), ensure_ascii=False, indent=2))
     return 0
 
 
-def _conversation_output(result, session_path: Path) -> Dict[str, Any]:
+def _conversation_output(result, session_path: Path, output_format: str = "json") -> Dict[str, Any]:
     data = result.to_dict()
     data["session_path"] = str(session_path)
+    if output_format == "a2ui-json":
+        return {
+            "status": data["status"],
+            "assistant_message": data["assistant_message"],
+            "session_id": data["session_id"],
+            "session_path": data["session_path"],
+            "a2ui_tree": data["a2ui_tree"],
+            "next_question": data["next_question"],
+            "events": data["events"],
+            "applied_updates": data["applied_updates"],
+            "agent_spec_summary": data["agent_spec_summary"],
+            "agent_dir": data["agent_dir"],
+            "run_dir": data["run_dir"],
+        }
     return data
+
+
+def cmd_serve_conversation(args: argparse.Namespace) -> int:
+    provider_name = getattr(args, "llm_provider", "offline")
+    if getattr(args, "llm", False) and provider_name == "offline":
+        provider_name = "openai"
+    serve_conversation_api(
+        host=args.host,
+        port=args.port,
+        output_root=args.output,
+        provider_name=provider_name,
+        model=getattr(args, "model", None),
+        run_dry_run=not args.no_dry_run,
+    )
+    return 0
 
 
 def _resolve_topic_selection(topics: List[str], raw: str) -> str:
@@ -552,6 +590,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         return cmd_ui_demo(args)
     if args.command == "chat-build":
         return cmd_chat_build(args)
+    if args.command == "serve-conversation":
+        return cmd_serve_conversation(args)
     parser.print_help()
     return 2
 

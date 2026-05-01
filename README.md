@@ -200,7 +200,36 @@ python3 -m agent_foundry.cli chat-build \
 python3 -m agent_foundry.cli chat-build "我想做一个 SVN Review Agent，帮我审查 diff" \
   --llm-provider mock \
   --reply "都按推荐" \
+  --format a2ui-json \
   --output ./workspace
+```
+
+### Conversation Runtime API
+
+Web / A2UI 客户端可以直接使用运行时 API。每轮响应都会包含 `assistant_message`、`session_id`、`a2ui_tree` 和状态字段。
+
+```bash
+python3 -m agent_foundry.cli serve-conversation \
+  --llm-provider mock \
+  --host 127.0.0.1 \
+  --port 8765 \
+  --output ./workspace/conversation_api
+```
+
+启动会话：
+
+```bash
+curl -s http://127.0.0.1:8765/conversation/start \
+  -H 'Content-Type: application/json' \
+  -d '{"user_goal":"我想做一个 SVN Review Agent，帮我审查 diff"}'
+```
+
+响应 action event：
+
+```bash
+curl -s http://127.0.0.1:8765/conversation/respond \
+  -H 'Content-Type: application/json' \
+  -d '{"session_id":"session_xxx","action_event":{"action":"select_option","session_id":"session_xxx","payload":{"question_id":"review_focus","value":["bug_risk","test_impact"]}}}'
 ```
 
 ### OpenAI 创建 Agent
@@ -359,6 +388,7 @@ python3 -m unittest discover -s tests -v
 11. Web / A2UI renderer 和 action event protocol
 12. UI demo action events -> AgentSpec -> dry run
 13. Conversation Orchestrator 自然语言多轮 Builder
+14. Conversation Runtime API 每轮返回 A2UI tree
 ```
 
 ## MVP 验收矩阵
@@ -371,7 +401,7 @@ python3 -m unittest discover -s tests -v
 | Writing E2E | `python3 -m agent_foundry.cli new "我想做一个微信公众号写作 Agent，帮我把素材变成文章" --llm-provider mock --accept-recommended --dry-run --output ./workspace` | dry run 下生成 `topic_options.md`、`outline.md`、`article.md`、`publish_package.json`、`style_rule_patch.md`。 |
 | 权限安全 | 查看生成的 `agent.yaml` 与 `permission_checks.json` | 高风险动作没有静默 `allow`，长期记忆更新需要审批。 |
 | UI Demo | `python3 -m agent_foundry.cli ui-demo --output ./workspace/ui_demo` | 生成 review/writing 两条 action event -> AgentSpec -> dry run demo。 |
-| Conversation Builder | `python3 -m agent_foundry.cli chat-build "我想做一个 SVN Review Agent，帮我审查 diff" --llm-provider mock --reply "都按推荐" --output ./workspace` | 从自然语言目标和回答自动生成 Agent 工程与 dry run。 |
+| Conversation Builder | `python3 -m agent_foundry.cli chat-build "我想做一个 SVN Review Agent，帮我审查 diff" --llm-provider mock --reply "都按推荐" --format a2ui-json --output ./workspace` | 从自然语言目标和回答自动生成 Agent 工程与 dry run，并返回可渲染 A2UI tree。 |
 
 ---
 
