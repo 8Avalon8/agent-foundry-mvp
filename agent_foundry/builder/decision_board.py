@@ -8,7 +8,7 @@ from .models import AgentDesignCard, DecisionBoard, DecisionQuestion, PreSpecSes
 from .intent_parser import parse_intent
 from .presets import find_preset, get_presets, get_recommended_preset
 from .decision_graph import get_agent_summary, get_questions, get_stage_order, next_stage
-from .impact_preview import build_impact_preview, impact_preview_as_diff
+from .impact_preview import build_impact_preview, build_spec_diff_preview, impact_preview_as_diff
 
 
 def create_session(user_goal: str, explicit_type: Optional[str] = None) -> PreSpecSession:
@@ -119,7 +119,7 @@ def apply_recommended_defaults(session: PreSpecSession, include_all_stages: bool
 def build_decision_board(session: PreSpecSession) -> DecisionBoard:
     refresh_visible_unresolved(session)
     summary = _summary_for_session(session)
-    impacts = build_impact_preview(session)
+    impacts = _candidate_diff_preview(session) or build_impact_preview(session)
     return DecisionBoard(
         session_id=session.id,
         stage=session.current_stage,
@@ -130,6 +130,20 @@ def build_decision_board(session: PreSpecSession) -> DecisionBoard:
         decisions={k: v.to_dict() for k, v in session.decisions.items()},
         impact_preview=impacts,
     )
+
+
+def _candidate_diff_preview(session: PreSpecSession) -> List:
+    candidate = PreSpecSession.from_dict(session.to_dict())
+    changed = False
+    for question in _session_questions(candidate, candidate.current_stage):
+        if question.id not in candidate.decisions:
+            default_value = question.recommended if question.recommended is not None else question.default
+            if default_value is not None:
+                candidate.apply_decision(question.id, default_value, source="recommended_accepted", confidence="medium")
+                changed = True
+    if not changed:
+        return []
+    return build_spec_diff_preview(session, candidate)
 
 
 def advance_stage(session: PreSpecSession) -> bool:

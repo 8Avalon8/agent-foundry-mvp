@@ -348,6 +348,21 @@ decision_question:
 - 当决策图发生条件分支变化时，`unresolved` 应从当前可见的 required 问题重新生成，避免隐藏问题继续阻塞 session。
 - `visible_when` 用来表达条件追问；MVP 支持 `{question, equals}`、`{question, in}`、`{question, contains}`、`all`、`any` 和 `not`。例如 `run_tests=deny` 时不显示测试白名单，`publish_policy=never_publish` 时不显示发布审批细节。
 
+### Impact Preview
+
+Impact Preview 可以用两种方式呈现：
+
+- 单点影响：展示当前决策会影响哪些 AgentSpec 路径。
+- before/after diff：编译两个候选 `PreSpecSession`，对 `tool_policy`、`human_feedback`、`memory` 和 `output.artifacts` 做字段级比较。
+
+diff-style 示例：
+
+```diff
+tool_policy.shell.run_tests:
+- permission: deny
++ permission: ask
+```
+
 ### 输入组件类型
 
 需要支持：

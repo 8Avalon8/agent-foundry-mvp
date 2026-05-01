@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 from .models import ImpactItem, PreSpecSession
 
 
@@ -13,6 +13,58 @@ def build_impact_preview(session: PreSpecSession) -> List[ImpactItem]:
         items = _generic_impact(session)
     _append_dynamic_question_impacts(session, items)
     return items
+
+
+def build_spec_diff_preview(before_session: PreSpecSession, after_session: PreSpecSession) -> List[ImpactItem]:
+    """Compile two sessions and return field-level diffs for user-visible policy areas."""
+    from .agentspec_compiler import compile_agentspec
+
+    before = _flatten_preview_fields(compile_agentspec(before_session))
+    after = _flatten_preview_fields(compile_agentspec(after_session))
+    items: List[ImpactItem] = []
+    for path in sorted(set(before) | set(after)):
+        before_value = before.get(path)
+        after_value = after.get(path)
+        if before_value != after_value:
+            items.append(
+                ImpactItem(
+                    path=path,
+                    value={"before": before_value, "after": after_value},
+                    reason="AgentSpec before/after diff.",
+                    risk_level=_risk_for_path(path, after_value),
+                )
+            )
+    return items
+
+
+def _flatten_preview_fields(spec: Dict[str, Any]) -> Dict[str, Any]:
+    fields: Dict[str, Any] = {}
+    for root in ["tool_policy", "human_feedback", "memory"]:
+        _flatten_value(root, spec.get(root, {}), fields)
+    fields["output.artifacts"] = spec.get("output", {}).get("artifacts")
+    return fields
+
+
+def _flatten_value(prefix: str, value: Any, fields: Dict[str, Any]) -> None:
+    if isinstance(value, dict):
+        if not value:
+            fields[prefix] = value
+        for key, child in value.items():
+            _flatten_value(f"{prefix}.{key}", child, fields)
+        return
+    fields[prefix] = value
+
+
+def _risk_for_path(path: str, value: Any) -> str:
+    if path.endswith(".risk") and isinstance(value, str):
+        return value
+    if "publish" in path or "commit" in path:
+        return "critical"
+    if "modify_source" in path:
+        return "high"
+    if "write_patch" in path or "run_tests" in path or path.startswith("memory."):
+        return "medium"
+    return "low"
 
 
 def _append_dynamic_question_impacts(session: PreSpecSession, items: List[ImpactItem]) -> None:
@@ -153,8 +205,18 @@ def impact_preview_as_diff(items: List[ImpactItem]) -> str:
     if not items:
         return "# 暂无影响预览"
     lines = ["# Impact Preview", ""]
-    for item in items:
-        lines.append(f"+ {item.path}: {item.value!r}")
+    diff_items = [item for item in items if isinstance(item.value, dict) and {"before", "after"} <= set(item.value)]
+    simple_items = [item for item in items if item not in diff_items]
+    for parent, grouped in _group_diff_items(diff_items):
+        lines.append(f"{parent}:")
+        for leaf, item in grouped:
+            lines.append(f"- {leaf}: {_format_preview_value(item.value.get('before'))}")
+            lines.append(f"+ {leaf}: {_format_preview_value(item.value.get('after'))}")
+            if item.reason:
+                lines.append(f"  # {item.reason}")
+        lines.append("")
+    for item in simple_items:
+        lines.append(f"+ {item.path}: {_format_preview_value(item.value)}")
         if item.reason:
             lines.append(f"  # {item.reason}")
     return "\n".join(lines)
@@ -162,3 +224,17 @@ def impact_preview_as_diff(items: List[ImpactItem]) -> str:
 
 def impact_items_to_mapping(items: List[ImpactItem]) -> Dict[str, Any]:
     return {item.path: item.value for item in items}
+
+
+def _group_diff_items(items: List[ImpactItem]) -> List[Tuple[str, List[Tuple[str, ImpactItem]]]]:
+    grouped: Dict[str, List[Tuple[str, ImpactItem]]] = {}
+    for item in items:
+        parent, _, leaf = item.path.rpartition(".")
+        grouped.setdefault(parent or item.path, []).append((leaf or item.path, item))
+    return [(parent, grouped[parent]) for parent in sorted(grouped)]
+
+
+def _format_preview_value(value: Any) -> str:
+    if isinstance(value, str):
+        return value
+    return repr(value)
