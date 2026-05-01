@@ -6,12 +6,14 @@
 - Added LLM Provider abstraction.
 - Added Mock LLM Provider for local demos and tests.
 - Added OpenAI Provider using structured JSON responses.
+- OpenAI Provider now supports `OPENAI_BASE_URL` for OpenAI-compatible gateways.
 - Added LLM-backed intent parsing.
 - Added LLM-backed Pre-Spec design brief.
 - Added LLM-generated dynamic decision questions.
 - Added natural-language session update command.
 - Added LLM dry run for review-agent and writing-agent.
 - Added tests for the LLM upgrade path.
+- Added long-task planning source of truth at `docs/ultimate_task_todo.md`.
 
 ## Key commands
 

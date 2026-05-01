@@ -12,21 +12,26 @@ class OpenAIProvider(BaseLLMProvider):
 
     Configuration:
       - OPENAI_API_KEY must be set unless the SDK is configured externally.
+      - OPENAI_BASE_URL can point the SDK at a compatible gateway.
       - AGENT_FOUNDRY_OPENAI_MODEL can override the default model.
     """
 
     name = "openai"
 
-    def __init__(self, model: Optional[str] = None, api_key: Optional[str] = None) -> None:
+    def __init__(self, model: Optional[str] = None, api_key: Optional[str] = None, base_url: Optional[str] = None) -> None:
         self.model = model or os.environ.get("AGENT_FOUNDRY_OPENAI_MODEL") or "gpt-5.5"
         self.api_key = api_key or os.environ.get("OPENAI_API_KEY")
+        self.base_url = base_url or os.environ.get("OPENAI_BASE_URL")
         try:
             from openai import OpenAI  # type: ignore
         except Exception as exc:  # pragma: no cover
             raise LLMProviderError("OpenAI provider requires the `openai` package. Install with: pip install openai") from exc
         if not self.api_key:
             raise LLMProviderError("OPENAI_API_KEY is not set. Use --llm-provider mock for local testing.")
-        self.client = OpenAI(api_key=self.api_key)
+        client_kwargs: Dict[str, Any] = {"api_key": self.api_key}
+        if self.base_url:
+            client_kwargs["base_url"] = self.base_url
+        self.client = OpenAI(**client_kwargs)
 
     def complete_json(
         self,

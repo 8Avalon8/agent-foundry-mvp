@@ -1,15 +1,20 @@
 from __future__ import annotations
 
 import json
+import os
+import sys
 import tempfile
 import unittest
+from types import SimpleNamespace
 from pathlib import Path
+from unittest.mock import patch
 
 from agent_foundry.builder.decision_board import apply_recommended_defaults, build_decision_board
 from agent_foundry.builder.agentspec_compiler import compile_agentspec
 from agent_foundry.builder.file_generator import generate_agent_files
 from agent_foundry.builder.llm_builder import apply_natural_language_update, create_session_with_llm
 from agent_foundry.llm.mock_provider import MockLLMProvider
+from agent_foundry.llm.provider import provider_from_name
 from agent_foundry.runtime.dry_run import dry_run
 
 
@@ -46,6 +51,28 @@ class LLMUpgradeTest(unittest.TestCase):
         self.assertEqual(session.get_value("context_scope"), "project_search")
         self.assertEqual(session.get_value("source_modify_policy"), "deny")
         self.assertEqual(session.get_value("patch_policy"), "write_patch_ask")
+
+    def test_openai_provider_uses_openai_base_url(self) -> None:
+        captured = {}
+
+        class FakeOpenAI:
+            def __init__(self, **kwargs) -> None:
+                captured.update(kwargs)
+
+        fake_openai_module = SimpleNamespace(OpenAI=FakeOpenAI)
+        env = {
+            "OPENAI_API_KEY": "test-key",
+            "OPENAI_BASE_URL": "https://gateway.example/v1",
+            "AGENT_FOUNDRY_OPENAI_MODEL": "test-model",
+        }
+        with patch.dict(sys.modules, {"openai": fake_openai_module}):
+            with patch.dict(os.environ, env, clear=False):
+                provider = provider_from_name("openai")
+
+        self.assertIsNotNone(provider)
+        self.assertEqual(provider.model, "test-model")
+        self.assertEqual(captured["api_key"], "test-key")
+        self.assertEqual(captured["base_url"], "https://gateway.example/v1")
 
 
 if __name__ == "__main__":

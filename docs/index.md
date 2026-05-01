@@ -26,6 +26,9 @@
 6. [实施路线图](roadmap.md)
    - 把计划拆成 Milestone、Iteration、近期开发顺序和 MVP 成功标准。
 
+7. [终极 TaskTodo](ultimate_task_todo.md)
+   - 把最终 MVP 标准拆成可长任务执行的任务清单，包含代码路径、文档路径、生成物路径和验收命令。
+
 ## 当前项目状态
 
 当前代码已经覆盖第一条核心链路的大部分骨架：
@@ -51,4 +54,4 @@
 - AgentSpec / Compiler / Runtime：`docs/agentspec_runtime.md`
 - 示例 Agent 验收：`docs/example_agents.md`
 - 迭代路线：`docs/roadmap.md`
-
+- 长任务执行清单：`docs/ultimate_task_todo.md`

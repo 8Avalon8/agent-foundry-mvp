@@ -42,6 +42,7 @@
 - `docs/agentspec_runtime.md`：AgentSpec、Compiler、Runtime、权限和反馈机制。
 - `docs/example_agents.md`：SVN Review Agent 与微信公众号写作 Agent 的 MVP 验收。
 - `docs/roadmap.md`：实施路线图、milestones 和下一步建议。
+- `docs/ultimate_task_todo.md`：长任务执行清单，包含路径、任务拆分和验收命令。
 
 ## 常用命令
 
@@ -103,6 +104,7 @@ python3 -m agent_foundry.cli update-session ./workspace/.agent_foundry_sessions/
 - `docs/prespec_decision_board.md` 是 PreSpecSession、DecisionQuestion、DecisionBoard、PresetProfile 和组件协议的 source of truth。
 - `docs/agentspec_runtime.md` 是 AgentSpec v0.1、Compiler 输出、Permission Engine、Human Feedback Engine 和 Memory Engine 的 source of truth。
 - `docs/roadmap.md` 是 milestone、iteration 和下一步开发顺序的 source of truth。
+- `docs/ultimate_task_todo.md` 是执行长任务时的 TaskTodo source of truth。
 - 不要把尚未实现的规划写成“已经支持”；文档里要区分当前状态、目标形态和下一步。
 
 ## 生成物与测试注意事项

@@ -93,6 +93,12 @@ export OPENAI_API_KEY="你的 key"
 export AGENT_FOUNDRY_OPENAI_MODEL="gpt-5.5"
 ```
 
+如果你使用 OpenAI-compatible gateway，可以设置：
+
+```bash
+export OPENAI_BASE_URL="https://your-gateway.example/v1"
+```
+
 ---
 
 ## 运行方式

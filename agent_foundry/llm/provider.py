@@ -16,10 +16,11 @@ LLMError = LLMProviderError
 @dataclass
 class LLMConfig:
     provider: str = "mock"
-    model: str = "gpt-5.5"
+    model: Optional[str] = None
     temperature: float = 0.2
     timeout_seconds: int = 60
     api_key: Optional[str] = None
+    base_url: Optional[str] = None
 
 
 class LLMProvider(Protocol):
@@ -56,10 +57,16 @@ def get_provider(config: LLMConfig) -> LLMProvider:
     if provider_name == "openai":
         from .openai_provider import OpenAIProvider
         try:
-            return OpenAIProvider(model=config.model, api_key=config.api_key)  # old-compatible provider
+            return OpenAIProvider(model=config.model, api_key=config.api_key, base_url=config.base_url)  # old-compatible provider
         except TypeError:
             from .openai_provider import OpenAIResponsesProvider
-            return OpenAIResponsesProvider(model=config.model, api_key=config.api_key, temperature=config.temperature, timeout_seconds=config.timeout_seconds)
+            return OpenAIResponsesProvider(
+                model=config.model,
+                api_key=config.api_key,
+                base_url=config.base_url,
+                temperature=config.temperature,
+                timeout_seconds=config.timeout_seconds,
+            )
     raise LLMProviderError(f"Unknown LLM provider: {config.provider}")
 
 
@@ -67,7 +74,7 @@ def provider_from_name(name: str | None, model: Optional[str] = None) -> Optiona
     provider_name = (name or "offline").lower()
     if provider_name in {"offline", "none", "rule", "rules"}:
         return None
-    return get_provider(LLMConfig(provider=provider_name, model=model or "gpt-5.5"))
+    return get_provider(LLMConfig(provider=provider_name, model=model))
 
 
 def get_llm_provider(provider: str = "mock", model: Optional[str] = None) -> LLMProvider:
