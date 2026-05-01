@@ -36,7 +36,9 @@ def apply_action_event(session: PreSpecSession, event: JSONDict) -> ActionResult
     payload = event.get("payload") or {}
     if action not in ACTION_TYPES:
         return _rejected(session, action, "unsupported_action", f"Unsupported action: {action}")
-    if event.get("session_id") and event["session_id"] != session.id:
+    if not event.get("session_id"):
+        return _rejected(session, action, "missing_session_id", "Action event must include session_id.")
+    if event["session_id"] != session.id:
         return _rejected(session, action, "session_mismatch", "Action event session_id does not match current session.")
     if action == "select_option":
         return _select_option(session, payload)

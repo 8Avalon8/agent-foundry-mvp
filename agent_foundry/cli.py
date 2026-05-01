@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from agent_foundry.builder.agentspec_compiler import compile_agentspec
+from agent_foundry.builder.conversation_orchestrator import ConversationResult, handle_user_reply, next_question, start_conversation
 from agent_foundry.builder.decision_board import (
     advance_stage,
     apply_preset,
@@ -139,6 +140,16 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_ui_demo = sub.add_parser("ui-demo", help="Generate deterministic UI E2E demo outputs")
     p_ui_demo.add_argument("--output", type=Path, default=Path("workspace/ui_demo"), help="Output directory for demo fixtures")
+
+    p_chat = sub.add_parser("chat-build", help="Build an Agent through natural-language multi-turn conversation")
+    p_chat.add_argument("goal", nargs="?", help="Natural language goal. Omit when continuing with --session.")
+    p_chat.add_argument("--session", type=Path, help="Resume an existing conversation PreSpecSession")
+    p_chat.add_argument("--reply", action="append", default=[], help="User reply for this turn. Can be repeated for scripted multi-turn use.")
+    p_chat.add_argument("--type", dest="agent_type", help="Optional explicit agent type for a new conversation")
+    p_chat.add_argument("--name", dest="agent_name", help="Agent folder/name override when the conversation completes")
+    p_chat.add_argument("--output", type=Path, default=Path("workspace"), help="Output root for session, generated Agent, and dry run")
+    p_chat.add_argument("--no-dry-run", action="store_true", help="Compile the Agent without running dry run after decisions are complete")
+    _add_llm_args(p_chat)
 
     return parser
 
@@ -445,6 +456,56 @@ def cmd_ui_demo(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_chat_build(args: argparse.Namespace) -> int:
+    provider = _resolve_provider(args)
+    output_root: Path = args.output
+    output_root.mkdir(parents=True, exist_ok=True)
+    session_path = args.session
+    if session_path:
+        session = load_session(session_path)
+        result = None
+    else:
+        if not args.goal:
+            raise SystemExit("chat-build requires a goal unless --session is provided")
+        result = start_conversation(args.goal, provider=provider, explicit_type=args.agent_type)
+        session = result.session
+        session_path = output_root / ".agent_foundry_sessions" / f"{session.id}.json"
+        save_session(session, session_path)
+
+    replies = list(args.reply)
+    if not replies:
+        if result is None:
+            question = next_question(session)
+            result = ConversationResult(
+                status="asking" if question else "ready_to_build",
+                message="继续确认下一项。" if question else "关键决策已经足够明确，可以生成 Agent。",
+                session=session,
+                next_question=question,
+            )
+        print(json.dumps(_conversation_output(result, session_path), ensure_ascii=False, indent=2))
+        return 0
+
+    for reply in replies:
+        result = handle_user_reply(
+            session,
+            reply,
+            provider=provider,
+            output_root=output_root,
+            agent_name=args.agent_name,
+            run_dry_run=not args.no_dry_run,
+        )
+        session = result.session
+        save_session(session, session_path)
+    print(json.dumps(_conversation_output(result, session_path), ensure_ascii=False, indent=2))
+    return 0
+
+
+def _conversation_output(result, session_path: Path) -> Dict[str, Any]:
+    data = result.to_dict()
+    data["session_path"] = str(session_path)
+    return data
+
+
 def _resolve_topic_selection(topics: List[str], raw: str) -> str:
     if raw.isdigit():
         index = int(raw) - 1
@@ -489,6 +550,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         return cmd_apply_action(args)
     if args.command == "ui-demo":
         return cmd_ui_demo(args)
+    if args.command == "chat-build":
+        return cmd_chat_build(args)
     parser.print_help()
     return 2
 

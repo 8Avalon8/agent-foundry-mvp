@@ -11,6 +11,7 @@ Agent Foundry 的主链路是：
   -> Draft Design：生成初步设计草案
   -> Pre-Spec Decision Board：可交互决策面板
   -> PreSpecSession：保存用户选择和未确认项
+  -> Conversation Orchestrator：自然语言多轮追问和 action event 回放
   -> Agent Design Card：阶段性确认卡
   -> AgentSpec v0.1：正式 Agent 蓝图
   -> Compiler：编译成工程文件
@@ -22,7 +23,7 @@ Agent Foundry 的主链路是：
 最关键的产品体验是：
 
 ```text
-自然语言 -> 可交互决策面板 -> 用户确认 -> AgentSpec
+自然语言 -> 可交互决策面板 -> 自然语言多轮确认 -> AgentSpec
 ```
 
 ## 模块职责

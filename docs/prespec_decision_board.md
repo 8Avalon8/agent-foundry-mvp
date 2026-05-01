@@ -123,6 +123,35 @@ UI 层通过 action event 回传用户操作，后端将事件应用到 `PreSpec
 - `confirm_stage` 只有当前阶段必填问题都已回答时才会推进阶段。
 - CLI 可用 `agent-foundry apply-action <session.json> '<event-json>'` 回放事件。
 
+## Conversation Orchestrator
+
+`agent_foundry.builder.conversation_orchestrator` 把 Pre-Spec 决策面板包装成自然语言多轮体验：
+
+```text
+用户一句话
+  -> 创建 PreSpecSession / DecisionBoard
+  -> 选择下一条最重要的可见必填问题
+  -> 接收自然语言回答
+  -> 转成 action event / session patch
+  -> 更新 board 和 impact preview
+  -> 无未决问题后自动 compile + dry run
+```
+
+当前 CLI：
+
+```bash
+python3 -m agent_foundry.cli chat-build "我想做一个 SVN Review Agent，帮我审查 diff" \
+  --llm-provider mock \
+  --reply "都按推荐" \
+  --output ./workspace
+```
+
+交互协议收束点：
+
+- action event 必须带 `session_id`，否则拒绝。
+- 自然语言回答先尽量映射到当前问题的 action event，再应用 LLM session patch。
+- 信息足够明确后自动产出 AgentSpec、Agent 工程和 dry run。
+
 ## 分阶段决策图
 
 ### Stage 1：基础目标确认

@@ -42,6 +42,20 @@ class ActionProtocolTest(unittest.TestCase):
         self.assertEqual(result.status, "rejected")
         self.assertEqual(session.to_dict(), before)
 
+    def test_missing_session_id_is_rejected_without_polluting_session(self) -> None:
+        session = create_session("我想做一个 SVN Review Agent，帮我审查 diff")
+        session.current_stage = "tool_permissions"
+        before = copy.deepcopy(session.to_dict())
+
+        result = apply_action_event(
+            session,
+            {"action": "select_option", "payload": {"question_id": "run_tests", "value": "ask"}},
+        )
+
+        self.assertEqual(result.status, "rejected")
+        self.assertEqual(result.errors[0]["code"], "missing_session_id")
+        self.assertEqual(session.to_dict(), before)
+
     def test_confirm_stage_requires_visible_required_decisions(self) -> None:
         session = create_session("我想做一个 SVN Review Agent，帮我审查 diff")
         session.current_stage = "tool_permissions"

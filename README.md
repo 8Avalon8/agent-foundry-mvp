@@ -173,6 +173,36 @@ python3 -m agent_foundry.cli new \
   --output ./workspace
 ```
 
+### 自然语言多轮创建
+
+`chat-build` 更接近“聊天式 Agent Builder”：系统会选择下一条最重要问题，接收自然语言回答，转换成 action event / session patch；当信息足够明确时自动生成 Agent 工程并 dry run。
+
+先启动并查看第一问：
+
+```bash
+python3 -m agent_foundry.cli chat-build "我想做一个 SVN Review Agent，帮我审查 diff" \
+  --llm-provider mock \
+  --output ./workspace
+```
+
+用自然语言回答并续跑：
+
+```bash
+python3 -m agent_foundry.cli chat-build \
+  --session ./workspace/.agent_foundry_sessions/session_xxx.json \
+  --reply "重点看 bug 和测试影响" \
+  --output ./workspace
+```
+
+快速接受推荐并直接生成 AgentSpec、Agent 工程和 dry run：
+
+```bash
+python3 -m agent_foundry.cli chat-build "我想做一个 SVN Review Agent，帮我审查 diff" \
+  --llm-provider mock \
+  --reply "都按推荐" \
+  --output ./workspace
+```
+
 ### OpenAI 创建 Agent
 
 ```bash
@@ -328,6 +358,7 @@ python3 -m unittest discover -s tests -v
 10. Runtime Permission Engine approval request
 11. Web / A2UI renderer 和 action event protocol
 12. UI demo action events -> AgentSpec -> dry run
+13. Conversation Orchestrator 自然语言多轮 Builder
 ```
 
 ## MVP 验收矩阵
@@ -340,6 +371,7 @@ python3 -m unittest discover -s tests -v
 | Writing E2E | `python3 -m agent_foundry.cli new "我想做一个微信公众号写作 Agent，帮我把素材变成文章" --llm-provider mock --accept-recommended --dry-run --output ./workspace` | dry run 下生成 `topic_options.md`、`outline.md`、`article.md`、`publish_package.json`、`style_rule_patch.md`。 |
 | 权限安全 | 查看生成的 `agent.yaml` 与 `permission_checks.json` | 高风险动作没有静默 `allow`，长期记忆更新需要审批。 |
 | UI Demo | `python3 -m agent_foundry.cli ui-demo --output ./workspace/ui_demo` | 生成 review/writing 两条 action event -> AgentSpec -> dry run demo。 |
+| Conversation Builder | `python3 -m agent_foundry.cli chat-build "我想做一个 SVN Review Agent，帮我审查 diff" --llm-provider mock --reply "都按推荐" --output ./workspace` | 从自然语言目标和回答自动生成 Agent 工程与 dry run。 |
 
 ---
 
