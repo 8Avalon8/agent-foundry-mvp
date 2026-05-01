@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Codex Handoff v0.1",
+  "type": "object",
+  "required": ["session_id", "status", "assistant_message", "web_url", "next_codex_instruction"],
+  "properties": {
+    "session_id": {"type": "string"},
+    "status": {"enum": ["asking", "awaiting_confirmation", "ready_to_build", "completed"]},
+    "assistant_message": {"type": "string"},
+    "web_url": {"type": "string"},
+    "a2ui_tree": {"type": "object"},
+    "current_stage": {"type": "string"},
+    "completed_stages": {"type": "array", "items": {"type": "string"}},
+    "missing_required_questions": {"type": "array", "items": {"type": "string"}},
+    "agent_design_card_path": {"type": ["string", "null"]},
+    "agentspec_path": {"type": ["string", "null"]},
+    "agent_dir": {"type": ["string", "null"]},
+    "run_dir": {"type": ["string", "null"]},
+    "summary": {"type": ["object", "null"]},
+    "next_codex_instruction": {"type": "string"}
+  },
+  "additionalProperties": true
+}

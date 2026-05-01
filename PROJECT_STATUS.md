@@ -1,4 +1,4 @@
-# Project Status — Agent Builder MVP
+# Project Status — Agent Design Surface MVP
 
 ## Delivered
 
@@ -27,6 +27,11 @@
 - Added serializable Runtime Permission Engine checks and approval requests.
 - Added tests for the MVP path.
 - Added long-task planning source of truth at `docs/ultimate_task_todo.md`.
+- Added Codex Handoff protocol and schema.
+- Added `/codex/start-design`, `/codex/session/{session_id}`, and `/codex/continue`.
+- Added session-specific Web URL at `/design/{session_id}`.
+- Added `codex-design`, `codex-status`, and `codex-continue` CLI commands.
+- Updated Agent Design Card output to include user-readable sections for what the Agent does, asks, forbids, remembers, and outputs.
 
 ## Key commands
 
@@ -93,12 +98,25 @@ The LLM proposes and explains. Deterministic code still compiles and enforces:
 | Conversation Builder | `python3 -m agent_foundry.cli chat-build "我想做一个 SVN Review Agent，帮我审查 diff" --llm-provider mock --reply "都按推荐" --format a2ui-json --output ./workspace` | Natural-language goal/reply produce Agent files, dry run, and renderable A2UI tree. |
 | Conversation Runtime | `python3 -m agent_foundry.cli serve-conversation --llm-provider mock --output ./workspace/conversation_api` | Web/A2UI clients can call `/conversation/start` and `/conversation/respond`. |
 | Web Builder | `python3 -m agent_foundry.cli serve-web --llm-provider mock --output ./workspace/web_builder` | Built-in Web UI renders A2UI, sends action events, visibly updates right-panel state, and produces Agent files plus dry run. |
+| Codex Web/A2UI Handoff | `python -m agent_foundry.cli codex-design "我想做一个 SVN Review Agent，帮我审查 diff" --llm-provider mock --output ./workspace/design_surface` | Returns `session_id`, `web_url`, `assistant_message`, `a2ui_tree`, and `next_codex_instruction`. |
+| Codex Continue | `python -m agent_foundry.cli codex-continue session_xxx --port 8765` | Returns completed Agent Design Card path, AgentSpec path, agent_dir, summary, and next Codex instruction. |
 
 Last verified on 2026-05-01: 83 unit tests passed; mock board, review-agent E2E, SVN Review Runtime E2E, explicit memory apply/reject, writing-agent E2E, research-agent E2E, UI demo E2E, Conversation Builder, Conversation Runtime, Web Builder smoke, Playwright right-panel interaction, OpenAI browser research dry run smoke, and generated permission checks passed.
 
 ## Next
 
-T0-T16 plus the Conversation Orchestrator / Runtime API, built-in Web Builder, and v0.2 SVN Review Runtime are implemented for the MVP boundary. Remaining future work is real A2UI SDK integration, automatic source modification, automatic test execution, real publishing, real web fetching for Research Agent, hosted deployment, and long-running background operation.
+Current product center is Agent Design Surface MVP:
+
+```text
+自然语言需求
+  -> Codex handoff
+  -> Web/A2UI 决策面板
+  -> Agent Design Card
+  -> AgentSpec
+  -> Codex 继续实现
+```
+
+Remaining future work is real A2UI SDK integration, automatic source modification, automatic test execution, real publishing, real web fetching for Research Agent, hosted deployment, and long-running background operation.
 
 ## Tests
 

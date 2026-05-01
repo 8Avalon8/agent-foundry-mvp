@@ -273,6 +273,13 @@ async function api(path, payload) {{
   return data;
 }}
 
+async function apiGet(path) {{
+  const res = await fetch(path);
+  const data = await res.json();
+  if (!res.ok || data.error) throw new Error(data.error || ('HTTP ' + res.status));
+  return data;
+}}
+
 async function loadHealth() {{
   try {{
     const res = await fetch('/health');
@@ -345,17 +352,21 @@ function renderResult(data) {{
     resultPanel.innerHTML = '';
     return;
   }}
-  const agent = data.agent_spec_summary?.agent || {{}};
+  const agent = data.agent_spec_summary?.agent || data.summary || {{}};
   const artifacts = data.agent_spec_summary?.output?.artifacts || [];
   resultPanel.classList.add('visible');
   resultPanel.innerHTML = `
+    <h2>Agent Design Complete</h2>
     <h2>已生成 Agent</h2>
     <dl>
-      <dt>名称</dt><dd>${{escapeHtml(agent.name || '')}}</dd>
-      <dt>类型</dt><dd>${{escapeHtml(agent.type || '')}}</dd>
+      <dt>名称</dt><dd>${{escapeHtml(agent.name || agent.agent_name || '')}}</dd>
+      <dt>类型</dt><dd>${{escapeHtml(agent.type || agent.agent_type || '')}}</dd>
+      <dt>Design</dt><dd>${{escapeHtml(data.agent_design_card_path || '')}}</dd>
+      <dt>AgentSpec</dt><dd>${{escapeHtml(data.agentspec_path || '')}}</dd>
       <dt>Agent</dt><dd>${{escapeHtml(data.agent_dir || '')}}</dd>
       <dt>Dry run</dt><dd>${{escapeHtml(data.run_dir || '')}}</dd>
       <dt>产物</dt><dd>${{escapeHtml(artifacts.join(', '))}}</dd>
+      <dt>Codex</dt><dd>可以继续。</dd>
     </dl>
   `;
 }}
@@ -581,6 +592,17 @@ el('mockExampleBtn').addEventListener('click', () => {{
 }});
 
 loadHealth();
+if (config.error) {{
+  addMessage('error', config.error);
+  setStatus('错误');
+}} else if (config.session_id) {{
+  apiGet('/codex/session/' + encodeURIComponent(config.session_id))
+    .then((data) => applyResponse(data))
+    .catch((err) => {{
+      addMessage('error', err.message);
+      setStatus('错误');
+    }});
+}}
 </script>
 </body>
 </html>"""

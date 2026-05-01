@@ -1,6 +1,8 @@
-# Agent Foundry MVP — v0.2 Runnable Harness
+# Agent Foundry MVP — Agent Design Surface
 
-这是一个可运行的 **Agent Builder / Agent 蓝图生成器** MVP。v0.2 新增了受控的 SVN Review Runtime，让生成出来的 `review-agent` 可以对真实或 fixture SVN working copy 跑一次最小审查。
+这是一个 **Codex 驱动的 Web/A2UI Agent Design Surface** MVP。主线是先把用户的自然语言需求交给本地服务，再让用户在 Web/A2UI 决策面板里确认 Agent 设计，最后生成 Agent Design Card 和 AgentSpec。
+
+当前重点不是完整业务 runtime。真实 SVN commit、真实公众号发布、自动 patch apply、任意 shell 自动执行和长期记忆自动合并都不在当前主线内。
 
 当前版本已经支持两种模式：
 
@@ -13,15 +15,12 @@ LLM 模式：LLM 负责意图理解、设计草案、动态问题、自然语言
 
 ```text
 自然语言需求
-  → Intent Parser / LLM Intent Parser
-  → Pre-Spec Decision Board
-  → 用户选择或自然语言补充
-  → PreSpecSession
+  → Codex Handoff
+  → Web/A2UI 决策面板
+  → 用户选择和确认
   → Agent Design Card
   → AgentSpec v0.1
-  → Agent 工程文件
-  → Deterministic or LLM Dry Run
-  → review-agent 可选进入真实 SVN review harness
+  → Codex 继续实现 demo / 文件 / prompt
 ```
 
 ---
@@ -229,6 +228,33 @@ python3 -m agent_foundry.cli serve-web \
 ```
 
 打开 `http://127.0.0.1:8765/`，输入目标后即可在网页里继续自然语言澄清、点击 A2UI 选项、采用推荐方案，并在 completed 状态查看 `agent_dir` 和 `run_dir`。
+
+### Codex Web/A2UI Handoff
+
+Codex 专用入口会确保服务可用，提交用户需求，并返回 session 专属 Web URL：
+
+```bash
+python -m agent_foundry.cli codex-design "我想做一个 SVN Review Agent，帮我审查 diff" \
+  --llm-provider mock \
+  --host 127.0.0.1 \
+  --port 8765 \
+  --output ./workspace/design_surface \
+  --open-web
+```
+
+检查状态：
+
+```bash
+python -m agent_foundry.cli codex-status session_xxx --host 127.0.0.1 --port 8765
+```
+
+完成后继续生成 Agent Design Card 和 AgentSpec：
+
+```bash
+python -m agent_foundry.cli codex-continue session_xxx --host 127.0.0.1 --port 8765
+```
+
+服务接口见 [Codex Handoff Protocol](docs/codex_handoff.md)，完整流程见 [Codex Web/A2UI Workflow](docs/codex_web_a2ui_workflow.md)。
 
 ### Conversation Runtime API
 

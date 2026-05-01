@@ -2,6 +2,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import subprocess
+import sys
+import time
+import urllib.error
+import urllib.request
+import webbrowser
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -206,6 +212,26 @@ def build_parser() -> argparse.ArgumentParser:
     p_serve_web.add_argument("--output", type=Path, default=Path("workspace/web_builder"))
     p_serve_web.add_argument("--no-dry-run", action="store_true", help="Compile without dry run when a conversation completes")
     _add_llm_args(p_serve_web, default_provider="openai")
+
+    p_codex_design = sub.add_parser("codex-design", help="Start a Codex handoff design session through Web/A2UI")
+    p_codex_design.add_argument("goal")
+    p_codex_design.add_argument("--type", dest="agent_type")
+    p_codex_design.add_argument("--name", dest="agent_name")
+    p_codex_design.add_argument("--host", default="127.0.0.1")
+    p_codex_design.add_argument("--port", type=int, default=8765)
+    p_codex_design.add_argument("--output", type=Path, default=Path("workspace/design_surface"))
+    p_codex_design.add_argument("--open-web", action="store_true")
+    _add_llm_args(p_codex_design, default_provider="mock")
+
+    p_codex_status = sub.add_parser("codex-status", help="Get Codex handoff session status")
+    p_codex_status.add_argument("session_id")
+    p_codex_status.add_argument("--host", default="127.0.0.1")
+    p_codex_status.add_argument("--port", type=int, default=8765)
+
+    p_codex_continue = sub.add_parser("codex-continue", help="Continue a completed design into Agent Design Card and AgentSpec")
+    p_codex_continue.add_argument("session_id")
+    p_codex_continue.add_argument("--host", default="127.0.0.1")
+    p_codex_continue.add_argument("--port", type=int, default=8765)
 
     return parser
 
@@ -650,6 +676,95 @@ def cmd_serve_web(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_codex_design(args: argparse.Namespace) -> int:
+    base = f"http://{args.host}:{args.port}"
+    started_service = False
+    if not _http_health_ok(base):
+        provider_name = getattr(args, "llm_provider", "mock")
+        if getattr(args, "llm", False):
+            provider_name = "openai"
+        cmd = [
+            sys.executable,
+            "-m",
+            "agent_foundry.cli",
+            "serve-web",
+            "--llm-provider",
+            provider_name,
+            "--host",
+            args.host,
+            "--port",
+            str(args.port),
+            "--output",
+            str(args.output),
+        ]
+        if getattr(args, "model", None):
+            cmd.extend(["--model", args.model])
+        subprocess.Popen(cmd, cwd=Path.cwd(), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        started_service = True
+        _wait_for_http_health(base)
+
+    payload: Dict[str, Any] = {"user_goal": args.goal}
+    if args.agent_type:
+        payload["agent_type"] = args.agent_type
+    if args.agent_name:
+        payload["agent_name"] = args.agent_name
+    result = _http_json("POST", base + "/codex/start-design", payload)
+    result["service_started"] = started_service
+    if args.open_web:
+        try:
+            webbrowser.open(result["web_url"])
+        except Exception:
+            pass
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_codex_status(args: argparse.Namespace) -> int:
+    base = f"http://{args.host}:{args.port}"
+    result = _http_json("GET", base + f"/codex/session/{args.session_id}")
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0
+
+
+def cmd_codex_continue(args: argparse.Namespace) -> int:
+    base = f"http://{args.host}:{args.port}"
+    result = _http_json("POST", base + "/codex/continue", {"session_id": args.session_id})
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0
+
+
+def _http_health_ok(base: str) -> bool:
+    try:
+        data = _http_json("GET", base + "/health")
+        return data.get("status") in {"ok", "degraded"}
+    except Exception:
+        return False
+
+
+def _wait_for_http_health(base: str) -> None:
+    deadline = time.time() + 8
+    last_error: Exception | None = None
+    while time.time() < deadline:
+        try:
+            if _http_health_ok(base):
+                return
+        except Exception as exc:
+            last_error = exc
+        time.sleep(0.1)
+    raise SystemExit(f"Codex design service did not start: {last_error or base}")
+
+
+def _http_json(method: str, url: str, payload: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    data = None if payload is None else json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    request = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"}, method=method)
+    try:
+        with urllib.request.urlopen(request, timeout=10) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8")
+        raise SystemExit(body) from exc
+
+
 def _resolve_topic_selection(topics: List[str], raw: str) -> str:
     if raw.isdigit():
         index = int(raw) - 1
@@ -714,6 +829,12 @@ def main(argv: Optional[List[str]] = None) -> int:
         return cmd_serve_conversation(args)
     if args.command == "serve-web":
         return cmd_serve_web(args)
+    if args.command == "codex-design":
+        return cmd_codex_design(args)
+    if args.command == "codex-status":
+        return cmd_codex_status(args)
+    if args.command == "codex-continue":
+        return cmd_codex_continue(args)
     parser.print_help()
     return 2
 

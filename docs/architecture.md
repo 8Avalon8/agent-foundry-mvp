@@ -6,6 +6,7 @@ Agent Foundry 的主链路是：
 
 ```text
 用户自然语言需求
+  -> Codex Handoff：Codex 启动服务并提交需求
   -> Intent Parser：理解用户想做什么 Agent
   -> Agent Type Classifier：判断 Agent 类型
   -> Draft Design：生成初步设计草案
@@ -14,19 +15,33 @@ Agent Foundry 的主链路是：
   -> Conversation Orchestrator：自然语言多轮追问和 action event 回放
   -> Conversation Runtime API：每轮返回 assistant_message + A2UI tree
   -> Built-in Web Builder：渲染 A2UI 并回传 action event
+  -> /design/{session_id}：session 专属 Web 设计面板
   -> Agent Design Card：阶段性确认卡
   -> AgentSpec v0.1：正式 Agent 蓝图
-  -> Compiler：编译成工程文件
-  -> Runtime Harness：运行 Agent
-  -> Human Feedback Loop：采集反馈
-  -> Rule Patch / Memory Patch：提出进化建议
+  -> Codex Continue：读取产物并继续实现 demo / 文件 / prompt
 ```
 
 最关键的产品体验是：
 
 ```text
-自然语言 -> 可交互决策面板 -> 自然语言多轮确认 -> AgentSpec
+自然语言 -> Codex handoff -> Web/A2UI 决策面板 -> AgentSpec -> Codex 继续
 ```
+
+当前主线是 Agent Design Surface，不是完整业务 runtime。Runtime Harness、真实 SVN review、真实发布和后台 daemon 都是后续能力或受控 demo 能力。
+
+### Codex Handoff
+
+Codex Handoff 是 Codex 和服务之间的协议层。
+
+职责：
+
+1. 接收 Codex 提交的用户目标。
+2. 创建并保存 PreSpecSession。
+3. 返回 `web_url` 和 `a2ui_tree`。
+4. 允许 Codex 查询 session 状态。
+5. 在设计完成后生成 Agent Design Card、AgentSpec 和 Agent 工程文件。
+
+接口见 [Codex Handoff Protocol](codex_handoff.md)。
 
 ## 模块职责
 

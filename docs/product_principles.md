@@ -6,9 +6,10 @@ Agent Foundry 的核心目标是做一个 Agent Builder：
 
 ```text
 用户用自然语言说“我想做一个什么 Agent”
-  -> 系统生成可交互的 Pre-Spec 决策面板
-  -> 用户确认关键设计
-  -> 系统编译成 AgentSpec、工具策略、反馈策略、记忆策略和可运行 Agent 模板
+  -> Codex 把需求提交给本地 Agent Foundry 服务
+  -> Web/A2UI 决策面板让用户确认关键设计
+  -> 系统编译成 Agent Design Card、AgentSpec、工具策略、反馈策略和记忆策略
+  -> Codex 读取结果并继续实现下一步
 ```
 
 它不是 prompt 生成器，而是：
@@ -21,7 +22,7 @@ Agent Foundry 的核心目标是做一个 Agent Builder：
 最终体验应该是：
 
 ```text
-自然语言 -> 可交互决策面板 -> 用户确认 -> AgentSpec
+自然语言 -> Codex handoff -> Web/A2UI 决策面板 -> 用户确认 -> AgentSpec -> Codex 继续
 ```
 
 而不是：
@@ -41,6 +42,8 @@ Agent Builder 像一个专业架构师，而不是问卷机器人。它应该：
 5. 把用户选择编译成 AgentSpec。
 6. 生成可运行 Agent 模板。
 7. 在运行后持续接收反馈，并提出规则更新建议。
+
+当前 Agent Design Surface MVP 先完成创建 Agent 之前的设计闭环。真实 SVN runtime、真实公众号发布、自动 patch apply 和长期记忆自动合并是后续能力，不是当前主线。
 
 默认行为：
 

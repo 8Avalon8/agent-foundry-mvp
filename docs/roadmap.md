@@ -8,18 +8,16 @@
 我想做一个 SVN Review Agent，帮我审查 diff。
 ```
 
-系统应该完成：
+系统应该完成 Agent Design Surface 闭环：
 
 1. 自动识别为 `review-agent`。
 2. 推荐“受控半自动”配置。
-3. 显示 4-6 个关键决策问题。
-4. 每个问题有推荐选项和原因。
-5. 支持用户选择和补充。
-6. 生成 Agent Design Card。
-7. 生成 AgentSpec YAML。
-8. 生成工程文件。
-9. 执行一次 dry run。
-10. 输出 review 报告和 feedback 标签。
+3. Codex 通过 `/codex/start-design` 把需求提交给服务。
+4. 服务返回 session 专属 `/design/{session_id}`。
+5. Web/A2UI 面板显示关键决策问题、推荐理由、风险提示和 Impact Preview。
+6. 用户完成选择和阶段确认。
+7. `/codex/continue` 生成 Agent Design Card、AgentSpec YAML 和 Agent 工程文件。
+8. Codex 读取结果并继续实现 demo 或实现计划。
 
 ## Milestones
 
@@ -342,13 +340,13 @@ output_schema.json
 
 ## 下一步建议
 
-当前 T0-T16 和 Milestone 9.5 已进入验收收口；下一步优先做更多真实 SVN working copy 场景和错误恢复验证。真实 Web UI runtime、官方 A2UI SDK、自动源码修改、自动测试执行、真实公众号发布和真实网页抓取仍在 MVP 边界外。
+当前收束目标是 Codex 驱动的 Web/A2UI Agent Design Surface。下一步优先增强 session 页面体验、真实 A2UI SDK 适配和 Codex 读取 AgentSpec 后的实现计划生成。自动源码修改、自动测试执行、真实公众号发布、真实网页抓取和后台 daemon 仍在 MVP 边界外。
 
 ## 第一版暂不做
 
 为了避免项目过大，第一版先不做：
 
-1. 真正 Web UI。
+1. 完整官方 A2UI SDK 集成。
 2. 完整 A2UI 集成。
 3. 真正接入微信公众号。
 4. 自动修改源码。
@@ -359,16 +357,16 @@ output_schema.json
 9. 复杂数据库。
 10. 复杂权限沙箱。
 
-第一版已升级为 v0.2 runnable harness，当前保证：
+当前 Agent Design Surface 保证：
 
 ```text
 自然语言需求
-  -> 结构化决策面板
-  -> 用户选择
+  -> Codex handoff
+  -> Web/A2UI 决策面板
+  -> 用户选择和确认
+  -> Agent Design Card
   -> AgentSpec
-  -> 工程文件
-  -> dry run
-  -> review-agent 可受控读取 SVN diff 并生成真实 run 产物
+  -> Codex 继续实现
 ```
 
 Web / A2UI 并不是终局外的内容，当前已按 `docs/ultimate_task_todo.md` 中的 T13-T16 落地到协议和 demo 层：

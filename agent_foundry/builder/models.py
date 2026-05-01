@@ -267,7 +267,40 @@ class AgentDesignCard:
     unresolved_by_stage: Dict[str, List[str]] = field(default_factory=dict)
 
     def to_markdown(self) -> str:
-        lines = [f"# Agent Design Card: {self.title}", ""]
+        lines = ["# Agent Design Card", "", f"Agent：{self.title}", ""]
+        lines.extend(["## 1. Agent 是什么", "", self.title, ""])
+        lines.extend(["## 2. 它自动做什么", ""])
+        lines.extend([f"- {item}" for item in self.confirmed[:6]] or ["- 根据已确认设计执行低风险、可逆的步骤。"])
+        lines.extend(["", "## 3. 它什么时候必须问用户", ""])
+        lines.extend([f"- {item}" for item in self.unresolved[:6]] or ["- 运行测试、写入文件、发布、更新长期规则等敏感动作前必须询问。"])
+        lines.extend(["", "## 4. 它禁止做什么", ""])
+        lines.extend(
+            [
+                "- 不自动执行真实提交、发布或高风险外部副作用。",
+                "- 不静默修改长期记忆或项目规则。",
+                "",
+                "## 5. 它需要哪些工具或能力",
+                "",
+                "- 只使用 AgentSpec 中声明且符合 tool_policy 的能力。",
+                "",
+                "## 6. 用户如何反馈",
+                "",
+                "- 通过 Web/A2UI 决策、标签、审批卡或自然语言补充反馈。",
+                "",
+                "## 7. 它如何提出记忆 / 规则更新",
+                "",
+                "- 只生成可审查的 Rule Patch 或 Style Patch，等待用户审批。",
+                "",
+                "## 8. 它会输出什么",
+                "",
+                "- Agent Design Card、AgentSpec 和可选 Agent 工程文件。",
+                "",
+                "## 9. 当前仍未确认或暂不实现的内容",
+                "",
+            ]
+        )
+        lines.extend([f"- {item}" for item in self.unresolved] or ["- 暂无未确认项。"])
+        lines.extend(["", "## 10. Codex 下一步可以做什么", "", self.next_step, ""])
         if self.recommendation:
             lines.extend(["## 推荐模式", "", self.recommendation, ""])
         lines.extend(["## 已确认", ""])
