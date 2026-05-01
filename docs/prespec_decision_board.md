@@ -6,6 +6,9 @@ Pre-Spec 阶段位于 AgentSpec 之前。它负责把“我想做一个什么 Ag
 
 第一版优先做自定义 JSON 协议，然后再渲染成 CLI / Markdown / Web / A2UI-compatible UI。
 
+当前实现以 `DecisionBoard` 为 source of truth。CLI / Markdown / HTML / Web view model 都只消费
+`DecisionBoard`，渲染层不能修改 `PreSpecSession`。
+
 ## 页面结构
 
 一个标准 Decision Board 页面包括：
@@ -40,6 +43,28 @@ Pre-Spec 阶段位于 AgentSpec 之前。它负责把“我想做一个什么 Ag
 - `AgentDesignCard`
 
 `AgentDesignCard` 当前按阶段分组展示“已确认”和“待确认”。`medium_high`、`high`、`critical` 风险的问题如果只是采用推荐默认值，会继续显示为“尚未确认”，直到用户通过交互选择或自然语言指令明确确认。
+
+## Renderer Targets
+
+### Web Renderer
+
+`agent_foundry.renderers.web_renderer` 将 `DecisionBoard` 转成声明式 Web view model：
+
+- `AgentSummaryCard`
+- `PresetCardGroup`
+- `StageProgress`
+- `DecisionCard`
+- `ImpactPreview`
+- `ConfirmBar`
+
+Web view model 包含组件 `type`、`id`、`props`、`state_key` 和可触发的 action 元数据。它可以通过
+`agent-foundry board ... --format web-json` 输出 JSON，也可以通过 `--format web-html` 输出静态 HTML 预览。
+
+约束：
+
+- Web renderer 不执行任意 Agent 代码。
+- Web renderer 不改变 `PreSpecSession` 或 `DecisionBoard`。
+- 推荐理由、风险等级、影响预览和确认动作必须保留在输出中。
 
 ## 分阶段决策图
 
