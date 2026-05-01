@@ -1,0 +1,14 @@
+short_term:
+- current_diff
+- current_review_context
+- current_user_feedback
+long_term_candidates:
+- accepted_patterns
+- false_positive_patterns
+- project_rules
+update_policy: approved_rule_patch
+update_requires_approval: true
+forbidden:
+- credentials
+- secrets
+- unrelated_private_content

@@ -1,0 +1,5 @@
+metrics:
+- user_edit_distance
+- approval_rate
+- revision_rounds
+- style_match_score

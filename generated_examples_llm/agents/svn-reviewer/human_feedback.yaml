@@ -1,0 +1,17 @@
+finding_feedback:
+  mode: inline_labels
+  options:
+  - accepted
+  - false_positive
+  - too_minor
+  - duplicate
+  - needs_more_evidence
+before_run_tests:
+  mode: approval
+  show_command: true
+  when: tool_policy.shell.run_tests.permission == ask
+before_sensitive_action:
+  mode: risk_card_with_reason
+rule_update:
+  mode: diff_review
+  requires_approval: true

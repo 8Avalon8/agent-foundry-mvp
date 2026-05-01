@@ -1,0 +1,199 @@
+{
+  "id": "session_d8ae8b7ca453",
+  "user_goal": "我想做一个帮助我持续写微信公众号，分享 AI 技巧和使用心得的 Agent",
+  "inferred_agent_type": "writing-agent",
+  "current_stage": "foundation",
+  "selected_preset": "continuous_writer",
+  "decisions": {
+    "autonomy_level": {
+      "value": "L2",
+      "source": "llm_recommended_preset",
+      "confidence": "medium",
+      "note": "",
+      "inputs": {}
+    },
+    "writing_focus": {
+      "value": [
+        "engineering_thinking",
+        "ai_usage",
+        "personal_practice"
+      ],
+      "source": "llm_recommended_preset",
+      "confidence": "medium",
+      "note": "",
+      "inputs": {}
+    },
+    "material_sources": {
+      "value": [
+        "manual_input",
+        "markdown_notes"
+      ],
+      "source": "llm_recommended_preset",
+      "confidence": "medium",
+      "note": "",
+      "inputs": {}
+    },
+    "initiative_level": {
+      "value": "weekly_suggestion",
+      "source": "llm_recommended_preset",
+      "confidence": "medium",
+      "note": "",
+      "inputs": {}
+    },
+    "publish_policy": {
+      "value": "explicit_confirmation",
+      "source": "llm_recommended_preset",
+      "confidence": "medium",
+      "note": "",
+      "inputs": {}
+    },
+    "output_package": {
+      "value": [
+        "article_md",
+        "title_options",
+        "summary",
+        "cover_prompt",
+        "publish_checklist"
+      ],
+      "source": "llm_recommended_preset",
+      "confidence": "medium",
+      "note": "",
+      "inputs": {}
+    },
+    "topic_feedback": {
+      "value": "choice",
+      "source": "llm_recommended_preset",
+      "confidence": "medium",
+      "note": "",
+      "inputs": {}
+    },
+    "draft_feedback": {
+      "value": "report_plus_chat",
+      "source": "llm_recommended_preset",
+      "confidence": "medium",
+      "note": "",
+      "inputs": {}
+    },
+    "style_memory_policy": {
+      "value": "approved_style_patch",
+      "source": "llm_recommended_preset",
+      "confidence": "medium",
+      "note": "",
+      "inputs": {}
+    },
+    "lifecycle": {
+      "value": "continuous",
+      "source": "recommended_accepted",
+      "confidence": "medium",
+      "note": "",
+      "inputs": {}
+    },
+    "tone_guardrail": {
+      "value": [
+        "empty_grandstanding",
+        "marketing_tone"
+      ],
+      "source": "recommended_accepted",
+      "confidence": "medium",
+      "note": "",
+      "inputs": {}
+    },
+    "style_memory_scope": {
+      "value": [
+        "tone",
+        "title_preference",
+        "article_structure"
+      ],
+      "source": "recommended_accepted",
+      "confidence": "medium",
+      "note": "",
+      "inputs": {}
+    },
+    "dry_run_enabled": {
+      "value": "yes",
+      "source": "recommended_accepted",
+      "confidence": "medium",
+      "note": "",
+      "inputs": {}
+    }
+  },
+  "unresolved": [],
+  "metadata": {
+    "builder_mode": "llm",
+    "parsed_intent": {
+      "user_goal": "我想做一个帮助我持续写微信公众号，分享 AI 技巧和使用心得的 Agent",
+      "domain": "writing",
+      "likely_agent_type": "writing-agent",
+      "risk_level": "medium",
+      "requires_tools": [
+        "read_notes",
+        "generate_markdown",
+        "ask_user",
+        "store_style_memory"
+      ],
+      "possible_side_effects": [
+        "write_draft",
+        "external_publish"
+      ],
+      "confidence": "medium"
+    },
+    "llm_provider": "mock",
+    "llm_design": {
+      "title": "AI 公众号写作助手",
+      "risk_level": "medium",
+      "summary": [
+        "把碎片素材整理为选题池",
+        "先生成 3-5 个方向供用户选择，再生成大纲和初稿",
+        "发布动作必须显式确认",
+        "写作风格通过 Style Patch 审批后沉淀"
+      ],
+      "recommended_preset_id": "continuous_writer",
+      "recommended_preset_reason": "用户想持续输出内容，低打扰半自动比纯手动更合适。",
+      "notes": [
+        "Mock 设计简报；真实 LLM 会根据用户上下文生成更贴合的动态问题。"
+      ]
+    },
+    "llm_dynamic_questions": [
+      {
+        "id": "tone_guardrail",
+        "stage": "feedback_protocol",
+        "title": "文章语气要避免哪些问题？",
+        "input_type": "multi_choice",
+        "required": true,
+        "recommended": [
+          "empty_grandstanding",
+          "marketing_tone"
+        ],
+        "recommendation_reason": "写作型 Agent 很容易变成营销腔，提前设定护栏能减少后续修改。",
+        "risk_level": "low",
+        "options": [
+          {
+            "id": "marketing_tone",
+            "label": "避免营销腔",
+            "tradeoff": "标题会更克制",
+            "recommended": true
+          },
+          {
+            "id": "empty_grandstanding",
+            "label": "避免空泛上价值",
+            "tradeoff": "内容更贴近实践",
+            "recommended": true
+          },
+          {
+            "id": "too_tutorial",
+            "label": "避免过度入门教程",
+            "tradeoff": "更适合程序员读者",
+            "recommended": false
+          }
+        ],
+        "affects": [
+          "style_rules.tone_guardrail",
+          "human_feedback.draft_review"
+        ],
+        "help_text": "LLM-generated Pre-Spec question."
+      }
+    ]
+  },
+  "created_at": "2026-04-30T19:17:16.636202+00:00",
+  "updated_at": "2026-04-30T19:17:16.637690+00:00"
+}

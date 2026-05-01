@@ -1,0 +1,13 @@
+fs.read_notes:
+  permission: allow
+  scope: configured_notes_path
+  risk: medium
+fs.write_draft:
+  permission: allow
+  risk: low
+wechat.create_draft:
+  permission: ask
+  risk: high
+wechat.publish:
+  permission: ask
+  risk: critical

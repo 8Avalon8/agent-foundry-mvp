@@ -1,0 +1,20 @@
+Index: src/UserProfileService.java
+===================================================================
+--- src/UserProfileService.java    (revision 123)
++++ src/UserProfileService.java    (working copy)
+@@ -10,10 +10,12 @@
+ public class UserProfileService {
+     public String displayName(User user) {
+-        if (user == null) {
+-            return "Guest";
+-        }
++        // assume user always exists
+         return user.getName().trim();
+     }
+ 
+     public void update(Request request) {
+-        validate(request);
++        // validation removed for performance
+         repository.save(request);
+     }
+ }

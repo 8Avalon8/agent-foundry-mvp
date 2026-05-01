@@ -1,0 +1,13 @@
+topic_selection:
+  mode: choice
+  options_count: 3-5
+outline_review:
+  mode: structured_comment
+draft_review:
+  mode: report_plus_chat
+before_publish:
+  mode: explicit_approval
+  required_phrase: 确认发布
+style_rule_update:
+  mode: diff_review
+  requires_approval: true

@@ -1,0 +1,24 @@
+svn.diff:
+  permission: allow
+  risk: low
+fs.read:
+  permission: allow
+  scope: current_project
+  risk: low_to_medium
+code.search:
+  permission: allow
+  scope: current_project
+  risk: low_to_medium
+shell.run_tests:
+  permission: ask
+  allowed_commands: []
+  risk: medium
+fs.write_patch:
+  permission: deny
+  risk: medium_high
+fs.modify_source:
+  permission: ask
+  risk: high
+svn.commit:
+  permission: deny
+  risk: critical

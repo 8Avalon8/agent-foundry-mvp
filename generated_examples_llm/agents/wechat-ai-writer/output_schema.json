@@ -1,0 +1,29 @@
+{
+  "type": "object",
+  "required": [
+    "topics",
+    "outline",
+    "draft",
+    "publish_package"
+  ],
+  "properties": {
+    "topics": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "outline": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "draft": {
+      "type": "string"
+    },
+    "publish_package": {
+      "type": "object"
+    }
+  }
+}

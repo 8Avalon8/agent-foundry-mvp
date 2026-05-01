@@ -1,0 +1,5 @@
+metrics:
+- finding_acceptance_rate
+- false_positive_rate
+- actionable_suggestion_rate
+- user_revision_count

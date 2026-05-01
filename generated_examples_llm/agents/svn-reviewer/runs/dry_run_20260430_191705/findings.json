@@ -1,0 +1,19 @@
+[
+  {
+    "id": "F001",
+    "severity": "medium",
+    "title": "示例风险：边界检查可能不足",
+    "evidence": [
+      "mock evidence from diff"
+    ],
+    "recommendation": "补充边界输入测试，并确认上游保证。",
+    "confidence": 0.62,
+    "feedback_options": [
+      "accepted",
+      "false_positive",
+      "too_minor",
+      "duplicate",
+      "needs_more_evidence"
+    ]
+  }
+]

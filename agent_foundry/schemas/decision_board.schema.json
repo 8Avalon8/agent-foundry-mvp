@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DecisionBoard",
+  "type": "object",
+  "required": ["surface_type", "session_id", "stage", "title", "summary", "presets", "questions"],
+  "properties": {
+    "surface_type": {"const": "agent_design_board"},
+    "session_id": {"type": "string"},
+    "stage": {"type": "string"},
+    "title": {"type": "string"},
+    "summary": {"type": "object"},
+    "presets": {"type": "array"},
+    "questions": {"type": "array"},
+    "decisions": {"type": "object"},
+    "impact_preview": {"type": "array"},
+    "next_actions": {"type": "array", "items": {"type": "string"}}
+  }
+}

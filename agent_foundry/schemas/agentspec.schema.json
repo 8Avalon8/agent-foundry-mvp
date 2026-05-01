@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AgentSpec v0.1",
+  "type": "object",
+  "required": ["agent", "goal", "lifecycle", "autonomy", "inputs", "tools", "tool_policy", "human_feedback", "memory", "output", "eval"],
+  "properties": {
+    "agent": {
+      "type": "object",
+      "required": ["name", "version", "type", "description"],
+      "properties": {
+        "name": {"type": "string"},
+        "version": {"type": "string"},
+        "type": {"type": "string"},
+        "description": {"type": "string"}
+      }
+    },
+    "goal": {"type": "object"},
+    "lifecycle": {"type": "object"},
+    "autonomy": {"type": "object"},
+    "inputs": {"type": "object"},
+    "tools": {"type": "object"},
+    "tool_policy": {"type": "object"},
+    "human_feedback": {"type": "object"},
+    "memory": {"type": "object"},
+    "output": {"type": "object"},
+    "eval": {"type": "object"}
+  }
+}

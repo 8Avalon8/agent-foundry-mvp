@@ -1,0 +1,9 @@
+{
+  "summary": "一篇关于 Agent Builder、权限边界和人类反馈机制的实践文章。",
+  "cover_prompt": "A clean diagram of a human supervising an evolving AI agent workflow, minimal technical style.",
+  "checklist": [
+    "标题不过度营销",
+    "有真实例子",
+    "发布前人工确认"
+  ]
+}

@@ -1,0 +1,12 @@
+short_term:
+- current_article_goal
+- current_feedback
+long_term_candidates:
+- tone
+- title_preference
+- article_structure
+update_policy: approved_style_patch
+update_requires_approval: true
+forbidden:
+- credentials
+- private_unrelated_content

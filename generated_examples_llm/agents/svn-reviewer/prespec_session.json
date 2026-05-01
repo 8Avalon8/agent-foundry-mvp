@@ -1,0 +1,200 @@
+{
+  "id": "session_bf87dddd95c6",
+  "user_goal": "我想做一个 SVN Review Agent，帮我审查 diff",
+  "inferred_agent_type": "review-agent",
+  "current_stage": "foundation",
+  "selected_preset": "controlled_semi_auto",
+  "decisions": {
+    "autonomy_level": {
+      "value": "L2",
+      "source": "llm_recommended_preset",
+      "confidence": "medium",
+      "note": "",
+      "inputs": {}
+    },
+    "context_scope": {
+      "value": "project_search",
+      "source": "llm_recommended_preset",
+      "confidence": "medium",
+      "note": "",
+      "inputs": {}
+    },
+    "run_tests": {
+      "value": "ask",
+      "source": "llm_recommended_preset",
+      "confidence": "medium",
+      "note": "",
+      "inputs": {}
+    },
+    "patch_policy": {
+      "value": "suggestion_only",
+      "source": "llm_recommended_preset",
+      "confidence": "medium",
+      "note": "",
+      "inputs": {}
+    },
+    "source_modify_policy": {
+      "value": "ask",
+      "source": "llm_recommended_preset",
+      "confidence": "medium",
+      "note": "",
+      "inputs": {}
+    },
+    "output_format": {
+      "value": "markdown_report",
+      "source": "llm_recommended_preset",
+      "confidence": "medium",
+      "note": "",
+      "inputs": {}
+    },
+    "finding_feedback": {
+      "value": "inline_labels",
+      "source": "llm_recommended_preset",
+      "confidence": "medium",
+      "note": "",
+      "inputs": {}
+    },
+    "memory_policy": {
+      "value": "approved_rule_patch",
+      "source": "llm_recommended_preset",
+      "confidence": "medium",
+      "note": "",
+      "inputs": {}
+    },
+    "review_focus": {
+      "value": [
+        "bug_risk",
+        "maintainability",
+        "test_impact"
+      ],
+      "source": "recommended_accepted",
+      "confidence": "medium",
+      "note": "",
+      "inputs": {}
+    },
+    "lifecycle": {
+      "value": "on_demand",
+      "source": "recommended_accepted",
+      "confidence": "medium",
+      "note": "",
+      "inputs": {}
+    },
+    "max_iterations_without_user": {
+      "value": "3",
+      "source": "recommended_accepted",
+      "confidence": "medium",
+      "note": "",
+      "inputs": {}
+    },
+    "approval_style": {
+      "value": "risk_card_with_reason",
+      "source": "recommended_accepted",
+      "confidence": "medium",
+      "note": "",
+      "inputs": {}
+    },
+    "evidence_style": {
+      "value": "line_and_reason",
+      "source": "recommended_accepted",
+      "confidence": "medium",
+      "note": "",
+      "inputs": {}
+    },
+    "memory_scope": {
+      "value": [
+        "accepted_patterns",
+        "false_positive_patterns",
+        "project_rules"
+      ],
+      "source": "recommended_accepted",
+      "confidence": "medium",
+      "note": "",
+      "inputs": {}
+    },
+    "dry_run_enabled": {
+      "value": "yes",
+      "source": "recommended_accepted",
+      "confidence": "medium",
+      "note": "",
+      "inputs": {}
+    }
+  },
+  "unresolved": [],
+  "metadata": {
+    "builder_mode": "llm",
+    "parsed_intent": {
+      "user_goal": "我想做一个 SVN Review Agent，帮我审查 diff",
+      "domain": "code_review",
+      "likely_agent_type": "review-agent",
+      "risk_level": "medium",
+      "requires_tools": [
+        "read_svn_diff",
+        "read_files",
+        "search_code",
+        "generate_markdown",
+        "ask_user"
+      ],
+      "possible_side_effects": [
+        "run_tests",
+        "write_patch",
+        "modify_files"
+      ],
+      "confidence": "high"
+    },
+    "llm_provider": "mock",
+    "llm_design": {
+      "title": "SVN Review Agent",
+      "risk_level": "medium",
+      "summary": [
+        "读取 SVN diff 并结合项目上下文生成分级 Review 报告",
+        "默认不自动修改代码，也不自动 commit",
+        "运行测试、写 patch、更新规则前通过审批卡暂停",
+        "用户对 finding 打标签后，Agent 生成 Rule Patch 候选"
+      ],
+      "recommended_preset_id": "controlled_semi_auto",
+      "recommended_preset_reason": "代码审查需要上下文和一定自动化，但写入和命令执行要保留人工确认。",
+      "notes": [
+        "Mock 设计简报；真实 LLM 会根据代码库、流程和用户偏好提出更多定制问题。"
+      ]
+    },
+    "llm_dynamic_questions": [
+      {
+        "id": "evidence_style",
+        "stage": "feedback_protocol",
+        "title": "Review 报告需要多强的证据要求？",
+        "input_type": "single_choice",
+        "required": true,
+        "recommended": "line_and_reason",
+        "recommendation_reason": "明确证据要求能降低误报和主观建议。",
+        "risk_level": "low",
+        "options": [
+          {
+            "id": "summary_only",
+            "label": "只要摘要",
+            "tradeoff": "阅读轻，但难复核",
+            "recommended": false
+          },
+          {
+            "id": "line_and_reason",
+            "label": "代码位置 + 原因",
+            "tradeoff": "推荐，兼顾可读和可复核",
+            "recommended": true
+          },
+          {
+            "id": "line_reason_fix",
+            "label": "位置 + 原因 + 修复方向",
+            "tradeoff": "信息最多，但报告更长",
+            "recommended": false
+          }
+        ],
+        "affects": [
+          "output.findings.evidence_style",
+          "eval.actionability"
+        ],
+        "help_text": "LLM-generated Pre-Spec question."
+      }
+    ]
+  },
+  "created_at": "2026-04-30T19:17:05.323553+00:00",
+  "updated_at": "2026-04-30T19:17:05.324871+00:00"
+}

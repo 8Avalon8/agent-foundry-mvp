@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PreSpecSession",
+  "type": "object",
+  "required": ["id", "user_goal", "inferred_agent_type", "current_stage", "decisions"],
+  "properties": {
+    "id": {"type": "string"},
+    "user_goal": {"type": "string"},
+    "inferred_agent_type": {"type": "string"},
+    "current_stage": {"type": "string"},
+    "selected_preset": {"type": ["string", "null"]},
+    "decisions": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["value", "source", "confidence"],
+        "properties": {
+          "value": {},
+          "source": {"type": "string"},
+          "confidence": {"type": "string"},
+          "note": {"type": "string"},
+          "inputs": {"type": "object"}
+        }
+      }
+    },
+    "unresolved": {"type": "array", "items": {"type": "string"}},
+    "metadata": {"type": "object"},
+    "created_at": {"type": "string"},
+    "updated_at": {"type": "string"}
+  }
+}

@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+env/
+ENV/
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Tooling
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Secrets / local config
+.env
+.env.*
+!.env.example
+*.secret
+*.key
+
+# Agent Foundry generated runtime outputs
+workspace/
+generated_agents/
+.agent_foundry_sessions/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/

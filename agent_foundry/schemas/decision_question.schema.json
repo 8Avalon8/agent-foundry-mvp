@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DecisionQuestion",
+  "type": "object",
+  "required": ["id", "title", "input_type", "stage"],
+  "properties": {
+    "id": {"type": "string"},
+    "title": {"type": "string"},
+    "input_type": {"enum": ["single_choice", "multi_choice", "text_input", "path_input", "number_input", "toggle", "permission_matrix", "ranked_choice", "approval", "diff_review", "checklist"]},
+    "stage": {"type": "string"},
+    "required": {"type": "boolean"},
+    "recommended": {},
+    "recommendation_reason": {"type": "string"},
+    "risk_level": {"type": "string"},
+    "options": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "label"],
+        "properties": {
+          "id": {"type": "string"},
+          "label": {"type": "string"},
+          "description": {"type": "string"},
+          "recommended": {"type": "boolean"},
+          "tradeoff": {"type": "string"},
+          "requires_input": {"type": ["object", "null"]},
+          "risk_level": {"type": "string"}
+        }
+      }
+    },
+    "affects": {"type": "array", "items": {"type": "string"}}
+  }
+}
