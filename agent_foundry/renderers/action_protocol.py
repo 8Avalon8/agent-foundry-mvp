@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
-from agent_foundry.builder.decision_board import advance_stage, build_decision_board
+from agent_foundry.builder.decision_board import advance_stage, apply_recommended_defaults, build_decision_board
 from agent_foundry.builder.models import DecisionQuestion, PreSpecSession
 from agent_foundry.renderers.component_catalog import ACTION_TYPES
 
@@ -46,6 +46,9 @@ def apply_action_event(session: PreSpecSession, event: JSONDict) -> ActionResult
         return _update_text(session, payload)
     if action == "confirm_stage":
         return _confirm_stage(session, payload)
+    if action == "use_recommended":
+        apply_recommended_defaults(session, include_all_stages=False)
+        return _accepted(session, action, "Recommended decisions applied.", {"stage": session.current_stage, "session": session.to_dict()})
     if action == "save_draft":
         session.metadata["last_saved_action"] = action
         return _accepted(session, action, "Session draft saved.", {"session": session.to_dict()})

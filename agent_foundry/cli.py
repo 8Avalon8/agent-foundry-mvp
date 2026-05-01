@@ -35,11 +35,11 @@ from agent_foundry.renderers.web_renderer import board_to_web_view_model, render
 from agent_foundry.renderers.ui_demo import build_ui_demo
 
 
-def _add_llm_args(parser: argparse.ArgumentParser) -> None:
+def _add_llm_args(parser: argparse.ArgumentParser, *, default_provider: str = "offline") -> None:
     parser.add_argument(
         "--llm-provider",
         choices=["offline", "mock", "openai"],
-        default="offline",
+        default=default_provider,
         help="LLM provider for intent/design/dry-run. `offline` keeps deterministic template mode.",
     )
     parser.add_argument("--llm", action="store_true", help="Shortcut for --llm-provider openai unless provider is explicitly set.")
@@ -159,6 +159,13 @@ def build_parser() -> argparse.ArgumentParser:
     p_serve.add_argument("--output", type=Path, default=Path("workspace/conversation_api"))
     p_serve.add_argument("--no-dry-run", action="store_true", help="Compile without dry run when a conversation completes")
     _add_llm_args(p_serve)
+
+    p_serve_web = sub.add_parser("serve-web", help="Serve the built-in Web/A2UI Agent Builder")
+    p_serve_web.add_argument("--host", default="127.0.0.1")
+    p_serve_web.add_argument("--port", type=int, default=8765)
+    p_serve_web.add_argument("--output", type=Path, default=Path("workspace/web_builder"))
+    p_serve_web.add_argument("--no-dry-run", action="store_true", help="Compile without dry run when a conversation completes")
+    _add_llm_args(p_serve_web, default_provider="openai")
 
     return parser
 
@@ -544,6 +551,22 @@ def cmd_serve_conversation(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_serve_web(args: argparse.Namespace) -> int:
+    provider_name = getattr(args, "llm_provider", "openai")
+    if getattr(args, "llm", False):
+        provider_name = "openai"
+    serve_conversation_api(
+        host=args.host,
+        port=args.port,
+        output_root=args.output,
+        provider_name=provider_name,
+        model=getattr(args, "model", None),
+        run_dry_run=not args.no_dry_run,
+        serve_web=True,
+    )
+    return 0
+
+
 def _resolve_topic_selection(topics: List[str], raw: str) -> str:
     if raw.isdigit():
         index = int(raw) - 1
@@ -592,6 +615,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         return cmd_chat_build(args)
     if args.command == "serve-conversation":
         return cmd_serve_conversation(args)
+    if args.command == "serve-web":
+        return cmd_serve_web(args)
     parser.print_help()
     return 2
 

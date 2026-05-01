@@ -38,6 +38,7 @@ class A2UIRendererTest(unittest.TestCase):
         schema = tree["action_payload_schema"]
         self.assertEqual(schema["properties"]["session_id"]["const"], session.id)
         self.assertIn("select_option", schema["properties"]["action"]["enum"])
+        self.assertIn("use_recommended", schema["properties"]["action"]["enum"])
         self.assertIn("confirm_stage", schema["properties"]["action"]["enum"])
 
 

@@ -75,12 +75,13 @@ The LLM proposes and explains. Deterministic code still compiles and enforces:
 | Safety | Inspect generated `agent.yaml` and `permission_checks.json` | No silent high-risk `allow`; memory updates require approval. |
 | Conversation Builder | `python3 -m agent_foundry.cli chat-build "我想做一个 SVN Review Agent，帮我审查 diff" --llm-provider mock --reply "都按推荐" --format a2ui-json --output ./workspace` | Natural-language goal/reply produce Agent files, dry run, and renderable A2UI tree. |
 | Conversation Runtime | `python3 -m agent_foundry.cli serve-conversation --llm-provider mock --output ./workspace/conversation_api` | Web/A2UI clients can call `/conversation/start` and `/conversation/respond`. |
+| Web Builder | `python3 -m agent_foundry.cli serve-web --llm-provider mock --output ./workspace/web_builder` | Built-in Web UI renders A2UI, sends action events, and produces Agent files plus dry run. |
 
-Last verified on 2026-05-01: unit tests passed; mock board, review-agent E2E, writing-agent E2E, UI demo E2E, Conversation Builder, Conversation Runtime, and generated permission checks passed.
+Last verified on 2026-05-01: unit tests passed; mock board, review-agent E2E, writing-agent E2E, UI demo E2E, Conversation Builder, Conversation Runtime, Web Builder smoke, and generated permission checks passed.
 
 ## Next
 
-T0-T16 plus the Conversation Orchestrator / Runtime API are implemented for the MVP boundary. Remaining future work is a polished hosted Web UI, real A2UI runtime integration, real SVN commands, real publishing, and long-running background operation.
+T0-T16 plus the Conversation Orchestrator / Runtime API and built-in Web Builder are implemented for the MVP boundary. Remaining future work is real A2UI SDK integration, real SVN commands, real publishing, hosted deployment, and long-running background operation.
 
 ## Tests
 

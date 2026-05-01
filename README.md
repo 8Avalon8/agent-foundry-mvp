@@ -204,6 +204,29 @@ python3 -m agent_foundry.cli chat-build "我想做一个 SVN Review Agent，帮�
   --output ./workspace
 ```
 
+### Web / A2UI Agent Builder
+
+完整版网页入口会直接渲染 A2UI 决策面板，并在会话完成后生成 Agent 工程和 dry run。默认使用 OpenAI provider：
+
+```bash
+python3 -m agent_foundry.cli serve-web \
+  --host 127.0.0.1 \
+  --port 8765 \
+  --output ./workspace/web_builder
+```
+
+如果只想本地稳定试跑，不依赖网络和 API Key：
+
+```bash
+python3 -m agent_foundry.cli serve-web \
+  --llm-provider mock \
+  --host 127.0.0.1 \
+  --port 8765 \
+  --output ./workspace/web_builder
+```
+
+打开 `http://127.0.0.1:8765/`，输入目标后即可在网页里继续自然语言澄清、点击 A2UI 选项、采用推荐方案，并在 completed 状态查看 `agent_dir` 和 `run_dir`。
+
 ### Conversation Runtime API
 
 Web / A2UI 客户端可以直接使用运行时 API。每轮响应都会包含 `assistant_message`、`session_id`、`a2ui_tree` 和状态字段。
@@ -389,6 +412,7 @@ python3 -m unittest discover -s tests -v
 12. UI demo action events -> AgentSpec -> dry run
 13. Conversation Orchestrator 自然语言多轮 Builder
 14. Conversation Runtime API 每轮返回 A2UI tree
+15. 内置 Web / A2UI Agent Builder 端到端生成 Agent
 ```
 
 ## MVP 验收矩阵
@@ -402,6 +426,7 @@ python3 -m unittest discover -s tests -v
 | 权限安全 | 查看生成的 `agent.yaml` 与 `permission_checks.json` | 高风险动作没有静默 `allow`，长期记忆更新需要审批。 |
 | UI Demo | `python3 -m agent_foundry.cli ui-demo --output ./workspace/ui_demo` | 生成 review/writing 两条 action event -> AgentSpec -> dry run demo。 |
 | Conversation Builder | `python3 -m agent_foundry.cli chat-build "我想做一个 SVN Review Agent，帮我审查 diff" --llm-provider mock --reply "都按推荐" --format a2ui-json --output ./workspace` | 从自然语言目标和回答自动生成 Agent 工程与 dry run，并返回可渲染 A2UI tree。 |
+| Web Builder | `python3 -m agent_foundry.cli serve-web --llm-provider mock --output ./workspace/web_builder` | 打开网页后可渲染 A2UI、回传 action event，并生成 Agent 工程与 dry run。 |
 
 ---
 

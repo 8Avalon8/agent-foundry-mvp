@@ -155,6 +155,12 @@ python3 -m agent_foundry.cli chat-build "我想做一个 SVN Review Agent，帮�
 `agent_foundry.runtime.conversation_runtime` 提供 Web / A2UI 客户端可调用的运行时 facade：
 
 ```text
+GET /
+  -> 内置 Web / A2UI Agent Builder
+
+GET /health
+  -> provider / model / output_root / OpenAI 配置状态
+
 POST /conversation/start
   -> assistant_message + session_id + a2ui_tree
 
@@ -172,6 +178,17 @@ POST /conversation/respond
 - `agent_dir`
 - `run_dir`
 - `agent_spec_summary`
+
+内置网页入口：
+
+```bash
+python3 -m agent_foundry.cli serve-web \
+  --host 127.0.0.1 \
+  --port 8765 \
+  --output ./workspace/web_builder
+```
+
+`serve-web` 默认使用 OpenAI provider；自动化验收和本地无 key 演示可以使用 `--llm-provider mock`。
 
 ## 分阶段决策图
 

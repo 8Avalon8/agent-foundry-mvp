@@ -13,7 +13,7 @@ COMPONENT_CATALOG: List[Dict[str, Any]] = [
     {"type": "ImpactPreview", "events": ["show_impact"]},
     {"type": "ImpactDiff", "events": ["show_impact"]},
     {"type": "StageProgress", "events": []},
-    {"type": "ConfirmBar", "events": ["confirm_stage", "save_draft"]},
+    {"type": "ConfirmBar", "events": ["use_recommended", "confirm_stage", "save_draft"]},
 ]
 
 
@@ -21,6 +21,7 @@ ACTION_TYPES = [
     "select_option",
     "update_text",
     "confirm_stage",
+    "use_recommended",
     "save_draft",
     "show_impact",
     "request_approval",

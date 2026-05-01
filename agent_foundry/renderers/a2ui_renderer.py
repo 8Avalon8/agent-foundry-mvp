@@ -50,7 +50,15 @@ def action_payload_schema(session_id: str | None = None) -> JSONDict:
         "required": ["action", "session_id", "payload"],
         "properties": {
             "action": {
-                "enum": ["select_option", "update_text", "confirm_stage", "save_draft", "show_impact", "request_approval"]
+                "enum": [
+                    "select_option",
+                    "update_text",
+                    "use_recommended",
+                    "confirm_stage",
+                    "save_draft",
+                    "show_impact",
+                    "request_approval",
+                ]
             },
             "session_id": {"type": "string"},
             "payload": {"type": "object"},
