@@ -243,6 +243,19 @@ patch_policy = write_patch_ask
 python3 -m agent_foundry.cli dry-run ./workspace/agents/svn-reviewer
 ```
 
+### Review feedback 标签闭环
+
+dry run 会生成 `findings.json`、`feedback_requests.json` 和 `rule_patch_proposal.md`。用户可以提交 finding label，并重新生成候选规则补丁：
+
+```bash
+python3 -m agent_foundry.cli feedback ./workspace/agents/svn-reviewer/runs/dry_run_xxx \
+  --label F001=accepted \
+  --label F002=false_positive \
+  --reason F002="该对象由上游工厂保证非空"
+```
+
+支持标签：`accepted`、`false_positive`、`too_minor`、`duplicate`、`needs_more_evidence`。规则补丁只会写入 `rule_patch_proposal.md`，不会自动更新长期规则。
+
 ### LLM dry run
 
 ```bash

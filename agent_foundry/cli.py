@@ -24,6 +24,7 @@ from agent_foundry.builder.file_generator import generate_agent_files
 from agent_foundry.builder.llm_builder import apply_natural_language_update, create_session_with_llm
 from agent_foundry.llm import LLMProviderError, provider_from_name
 from agent_foundry.runtime.dry_run import dry_run
+from agent_foundry.runtime.memory_engine import ALLOWED_REVIEW_LABELS, propose_memory_patch
 
 
 def _add_llm_args(parser: argparse.ArgumentParser) -> None:
@@ -105,6 +106,11 @@ def build_parser() -> argparse.ArgumentParser:
     p_update.add_argument("instruction", help="Natural language change, e.g. '可以读文件，但写文件前必须问我'")
     p_update.add_argument("--output", type=Path, help="Optional output session path. Defaults to overwrite input session.")
     _add_llm_args(p_update)
+
+    p_feedback = sub.add_parser("feedback", help="Apply review finding labels to a dry-run directory")
+    p_feedback.add_argument("run_dir", type=Path)
+    p_feedback.add_argument("--label", action="append", default=[], help="Finding label in the form F001=accepted")
+    p_feedback.add_argument("--reason", action="append", default=[], help="Optional reason in the form F001=explanation")
 
     return parser
 
@@ -329,6 +335,47 @@ def cmd_update_session(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_feedback(args: argparse.Namespace) -> int:
+    findings_path = args.run_dir / "findings.json"
+    if not findings_path.exists():
+        raise SystemExit(f"findings.json not found: {findings_path}")
+    findings = json.loads(findings_path.read_text(encoding="utf-8"))
+    labels = _parse_key_value_args(args.label, "--label")
+    reasons = _parse_key_value_args(args.reason, "--reason")
+    findings_by_id = {finding.get("id"): finding for finding in findings}
+    feedback_items = []
+    for finding_id, label in labels.items():
+        if label not in ALLOWED_REVIEW_LABELS:
+            raise SystemExit(f"Unsupported label for {finding_id}: {label}")
+        finding = findings_by_id.get(finding_id, {"id": finding_id, "title": finding_id})
+        feedback_items.append(
+            {
+                "finding_id": finding_id,
+                "title": finding.get("title", finding_id),
+                "label": label,
+                "reason": reasons.get(finding_id, ""),
+            }
+        )
+    if not feedback_items:
+        raise SystemExit("feedback requires at least one --label F001=accepted")
+    (args.run_dir / "feedback_labels.json").write_text(json.dumps(feedback_items, ensure_ascii=False, indent=2), encoding="utf-8")
+    patch = propose_memory_patch(feedback_items)
+    (args.run_dir / "rule_patch_proposal.md").write_text(patch, encoding="utf-8")
+    print(f"Saved feedback labels: {args.run_dir / 'feedback_labels.json'}")
+    print(f"Updated rule patch proposal: {args.run_dir / 'rule_patch_proposal.md'}")
+    return 0
+
+
+def _parse_key_value_args(items: List[str], flag: str) -> Dict[str, str]:
+    result: Dict[str, str] = {}
+    for item in items:
+        if "=" not in item:
+            raise SystemExit(f"{flag} expects KEY=VALUE, got: {item}")
+        key, value = item.split("=", 1)
+        result[key.strip()] = value.strip()
+    return result
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -342,6 +389,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         return cmd_dry_run(args)
     if args.command == "update-session":
         return cmd_update_session(args)
+    if args.command == "feedback":
+        return cmd_feedback(args)
     parser.print_help()
     return 2
 

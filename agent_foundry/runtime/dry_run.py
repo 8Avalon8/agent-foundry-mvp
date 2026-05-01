@@ -8,6 +8,8 @@ from typing import Any, Dict, List, Optional
 
 import yaml
 
+from .feedback_engine import batch_feedback_requests
+
 
 def load_agent_spec(agent_dir: Path) -> Dict[str, Any]:
     agent_file = agent_dir / "agent.yaml"
@@ -124,6 +126,10 @@ def run_review_dry_run_llm(spec: Dict[str, Any], diff_text: str, run_dir: Path, 
     findings = result.get("findings", [])
     (run_dir / "review_report.md").write_text(result.get("report_markdown", "# Review Report\n"), encoding="utf-8")
     (run_dir / "findings.json").write_text(json.dumps(findings, ensure_ascii=False, indent=2), encoding="utf-8")
+    (run_dir / "feedback_requests.json").write_text(
+        json.dumps(batch_feedback_requests(findings), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
     (run_dir / "test_suggestions.md").write_text(
         "# Test Suggestions\n\n" + "\n".join(f"- {x}" for x in result.get("test_suggestions", [])) + "\n",
         encoding="utf-8",
@@ -187,6 +193,10 @@ def run_review_dry_run(spec: Dict[str, Any], diff_text: str, run_dir: Path) -> P
 
     (run_dir / "review_report.md").write_text(report, encoding="utf-8")
     (run_dir / "findings.json").write_text(json.dumps(findings, ensure_ascii=False, indent=2), encoding="utf-8")
+    (run_dir / "feedback_requests.json").write_text(
+        json.dumps(batch_feedback_requests(findings), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
     (run_dir / "test_suggestions.md").write_text("# Test Suggestions\n\n" + "\n".join(f"- {x}" for x in tests) + "\n", encoding="utf-8")
     (run_dir / "rule_patch_proposal.md").write_text(rule_patch, encoding="utf-8")
     return run_dir
