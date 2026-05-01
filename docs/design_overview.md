@@ -1,5 +1,7 @@
 # Agent Foundry MVP Design Overview
 
+> 这是早期概览。更完整的分类文档见 [docs/index.md](index.md)。
+
 ## 1. 产品目标
 
 Agent Foundry 的目标不是生成一个 prompt，而是生成一套可控、可审查、可进化的 Agent 工程。
