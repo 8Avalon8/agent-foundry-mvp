@@ -310,7 +310,7 @@ output_schema.json
 
 ## 下一步建议
 
-当前 T0-T12 MVP 已进入验收收口；下一步优先做 T12 的端到端命令验证和生成物检查。Web / A2UI / UI demo 属于第二阶段 T13-T16，不属于当前已交付范围。
+当前 T0-T16 MVP 已进入验收收口；下一步优先做全量端到端命令验证和生成物检查。真实 Web UI runtime、真实 A2UI runtime、真实 SVN 调用和真实公众号发布仍在 MVP 边界外。
 
 ## 第一版暂不做
 
@@ -338,9 +338,9 @@ output_schema.json
   -> dry run
 ```
 
-Web / A2UI 并不是终局外的内容，而是第二阶段任务。具体拆分见 `docs/ultimate_task_todo.md` 中的 T13-T16：
+Web / A2UI 并不是终局外的内容，当前已按 `docs/ultimate_task_todo.md` 中的 T13-T16 落地到协议和 demo 层：
 
-- T13 Web Renderer
-- T14 A2UI-compatible Renderer
-- T15 Component Catalog / Action Protocol
-- T16 UI E2E Demo
+- T13 Web Renderer：声明式 Web view model / static HTML。
+- T14 A2UI-compatible Renderer：A2UI-compatible component tree。
+- T15 Component Catalog / Action Protocol：可回放 action event。
+- T16 UI E2E Demo：review/writing 两条 action event -> AgentSpec -> dry run demo。

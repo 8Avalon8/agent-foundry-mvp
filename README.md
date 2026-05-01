@@ -326,6 +326,8 @@ python3 -m unittest discover -s tests -v
 8. 工程文件生成稳定文件集
 9. Review / Writing feedback 闭环
 10. Runtime Permission Engine approval request
+11. Web / A2UI renderer 和 action event protocol
+12. UI demo action events -> AgentSpec -> dry run
 ```
 
 ## MVP 验收矩阵
@@ -337,6 +339,7 @@ python3 -m unittest discover -s tests -v
 | Review E2E | `python3 -m agent_foundry.cli new "我想做一个 SVN Review Agent，帮我审查 diff" --llm-provider mock --accept-recommended --dry-run --output ./workspace` | dry run 下生成 `review_report.md`、`findings.json`、`test_suggestions.md`、`feedback_requests.json`、`rule_patch_proposal.md`。 |
 | Writing E2E | `python3 -m agent_foundry.cli new "我想做一个微信公众号写作 Agent，帮我把素材变成文章" --llm-provider mock --accept-recommended --dry-run --output ./workspace` | dry run 下生成 `topic_options.md`、`outline.md`、`article.md`、`publish_package.json`、`style_rule_patch.md`。 |
 | 权限安全 | 查看生成的 `agent.yaml` 与 `permission_checks.json` | 高风险动作没有静默 `allow`，长期记忆更新需要审批。 |
+| UI Demo | `python3 -m agent_foundry.cli ui-demo --output ./workspace/ui_demo` | 生成 review/writing 两条 action event -> AgentSpec -> dry run demo。 |
 
 ---
 
@@ -345,7 +348,7 @@ python3 -m unittest discover -s tests -v
 这一版仍然不做：
 
 ```text
-1. 真正 Web UI
+1. 真正 Web UI runtime
 2. 真正 A2UI runtime
 3. 真正调用 SVN 命令
 4. 真正运行 shell 测试

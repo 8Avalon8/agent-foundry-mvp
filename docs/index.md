@@ -46,7 +46,7 @@
   -> Rule Patch / Style Patch 候选
 ```
 
-可用命令和验收矩阵见根目录 [README.md](../README.md) 与 [PROJECT_STATUS.md](../PROJECT_STATUS.md)。规划文档中 T0-T12 是当前 MVP 收束范围；T13-T16 是第二阶段 Web / A2UI / UI demo 规划，不要写成已交付能力。
+可用命令和验收矩阵见根目录 [README.md](../README.md) 与 [PROJECT_STATUS.md](../PROJECT_STATUS.md)。规划文档中 T0-T16 是当前 MVP 收束范围；Web / A2UI 已落到声明式 renderer、action protocol 和 UI demo，尚不包含真实托管 Web UI runtime 或真实 A2UI runtime 集成。
 
 ## Source of Truth
 

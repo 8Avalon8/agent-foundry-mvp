@@ -422,7 +422,7 @@ git status --short --branch
 - T0-T10 已完成代码收束，并由单测覆盖 provider、schema、Decision Graph、CLI interactive、Impact Preview、Design Card、AgentSpec 安全默认值、文件生成、review feedback、writing feedback 和 Permission Engine。
 - T11 文档同步范围：`README.md`、`PROJECT_STATUS.md`、`docs/index.md`、`docs/roadmap.md`、`docs/prespec_decision_board.md`、`docs/agentspec_runtime.md` 与本文件保持 source of truth 一致。
 - T12 已于 2026-05-01 通过端到端验收：37 条单测通过，mock board / review dry run / writing dry run 通过，`permission_checks.json` 中没有 high / critical 静默 `allow`，`workspace/` 仅作为 ignored 生成物存在。
-- T13-T16 是第二阶段 Web / A2UI / UI demo 规划，当前不标记为已交付。
+- T13-T16 已落地到第二阶段 MVP 边界：Web renderer、A2UI-compatible renderer、component catalog / action protocol、UI E2E demo。真实托管 Web UI runtime 和真实 A2UI runtime 集成仍在后续范围。
 
 ### T13：Web Renderer
 
@@ -513,10 +513,10 @@ git status --short --branch
 - `agent_foundry/runtime/dry_run.py`
 - `examples/svn_review/sample_diff.diff`
 - `examples/wechat_writer/sample_material.txt`
+- `examples/ui_demo/`
+- `tests/test_ui_e2e.py`
 - `docs/example_agents.md`
 - `docs/ultimate_task_todo.md`
-- 后续可新增：`examples/ui_demo/`
-- 后续可新增：`tests/test_ui_e2e.py`
 
 任务：
 
@@ -532,15 +532,22 @@ git status --short --branch
 2. UI 层不绕过 `tool_policy`、`human_feedback`、`memory.update_requires_approval`。
 3. demo 输出可作为回归测试 fixture。
 
+验收命令：
+
+```bash
+python3 -m unittest tests.test_ui_e2e -v
+python3 -m agent_foundry.cli ui-demo --output ./workspace/ui_demo
+```
+
 ## 长任务执行建议
 
 推荐执行顺序：
 
 ```text
-T0 -> T1 -> T2 -> T3 -> T4 -> T6 -> T7 -> T8 -> T9 -> T10 -> T11 -> T12
+T0 -> T1 -> T2 -> T3 -> T4 -> T6 -> T7 -> T8 -> T9 -> T10 -> T11 -> T12 -> T13 -> T14 -> T15 -> T16
 ```
 
-第二阶段终局任务：
+第二阶段终局任务已落地到 MVP 协议 / demo 层：
 
 - T13 Web Renderer。
 - T14 A2UI-compatible Renderer。

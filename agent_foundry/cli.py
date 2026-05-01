@@ -30,6 +30,7 @@ from agent_foundry.runtime.dry_run import load_agent_spec
 from agent_foundry.renderers.a2ui_renderer import board_to_a2ui_tree
 from agent_foundry.renderers.action_protocol import apply_action_event
 from agent_foundry.renderers.web_renderer import board_to_web_view_model, render_web_html
+from agent_foundry.renderers.ui_demo import build_ui_demo
 
 
 def _add_llm_args(parser: argparse.ArgumentParser) -> None:
@@ -135,6 +136,9 @@ def build_parser() -> argparse.ArgumentParser:
     p_action.add_argument("session", type=Path)
     p_action.add_argument("event_json", help="Action event JSON string")
     p_action.add_argument("--output", type=Path, help="Optional output session path. Defaults to overwrite input session.")
+
+    p_ui_demo = sub.add_parser("ui-demo", help="Generate deterministic UI E2E demo outputs")
+    p_ui_demo.add_argument("--output", type=Path, default=Path("workspace/ui_demo"), help="Output directory for demo fixtures")
 
     return parser
 
@@ -435,6 +439,12 @@ def cmd_apply_action(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_ui_demo(args: argparse.Namespace) -> int:
+    manifest = build_ui_demo(args.output)
+    print(json.dumps(manifest, ensure_ascii=False, indent=2))
+    return 0
+
+
 def _resolve_topic_selection(topics: List[str], raw: str) -> str:
     if raw.isdigit():
         index = int(raw) - 1
@@ -477,6 +487,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         return cmd_permission_check(args)
     if args.command == "apply-action":
         return cmd_apply_action(args)
+    if args.command == "ui-demo":
+        return cmd_ui_demo(args)
     parser.print_help()
     return 2
 
