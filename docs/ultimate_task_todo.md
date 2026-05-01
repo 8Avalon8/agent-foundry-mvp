@@ -417,6 +417,121 @@ git status --short --branch
 - 文档：source of truth 与当前实现状态一致。
 - 权限：高风险动作没有静默 `allow`。
 
+## 当前实现状态
+
+- T0-T10 已完成代码收束，并由单测覆盖 provider、schema、Decision Graph、CLI interactive、Impact Preview、Design Card、AgentSpec 安全默认值、文件生成、review feedback、writing feedback 和 Permission Engine。
+- T11 文档同步范围：`README.md`、`PROJECT_STATUS.md`、`docs/index.md`、`docs/roadmap.md`、`docs/prespec_decision_board.md`、`docs/agentspec_runtime.md` 与本文件保持 source of truth 一致。
+- T12 仍需在干净生成目录运行端到端验收命令并确认没有提交运行生成物。
+- T13-T16 是第二阶段 Web / A2UI / UI demo 规划，当前不标记为已交付。
+
+### T13：Web Renderer
+
+路径：
+
+- `agent_foundry/builder/decision_board.py`
+- `agent_foundry/builder/models.py`
+- `agent_foundry/schemas/decision_board.schema.json`
+- `docs/prespec_decision_board.md`
+- `docs/agentspec_runtime.md`
+- `tests/test_web_renderer.py`
+- 后续可新增：`agent_foundry/renderers/web_renderer.py`
+
+任务：
+
+1. 定义 Decision Board 到 Web view model 的稳定转换层。
+2. 支持 `AgentSummaryCard`、`PresetCardGroup`、`DecisionCard`、`ImpactPreview`、`StageProgress`、`ConfirmBar`。
+3. 保证 Web renderer 只渲染声明式结构，不执行任意 agent 代码。
+4. 输出可被前端或静态预览消费的 JSON / HTML。
+5. 为 review-agent 和 writing-agent 各准备一个 renderer fixture。
+
+验收：
+
+1. 同一个 `DecisionBoard` 能稳定渲染为 CLI、Markdown、HTML / Web view model。
+2. Web 输出中包含推荐理由、风险等级、影响预览和确认动作。
+3. Web renderer 不改变 `PreSpecSession`，只产生展示结构。
+
+### T14：A2UI-compatible Renderer
+
+路径：
+
+- `agent_foundry/builder/models.py`
+- `agent_foundry/builder/decision_board.py`
+- `agent_foundry/schemas/decision_board.schema.json`
+- `docs/prespec_decision_board.md`
+- `docs/architecture.md`
+- `tests/test_a2ui_renderer.py`
+- 后续可新增：`agent_foundry/renderers/a2ui_renderer.py`
+
+任务：
+
+1. 将 Agent Foundry 自定义 `DecisionBoard` 协议映射到 A2UI-compatible declarative component tree。
+2. 保持业务协议独立：`DecisionBoard` 是 source of truth，A2UI 只是渲染目标。
+3. 定义字段映射：component type、props、state key、action id、risk metadata、recommendation metadata。
+4. 支持至少这些组件：`AgentSummaryCard`、`PresetCardGroup`、`DecisionCard`、`ChoiceGroup`、`MultiChoiceGroup`、`TextInputWithHint`、`ImpactDiff`、`ConfirmBar`。
+5. 输出 action payload schema，供客户端把用户选择回传给 `PreSpecSession`。
+
+验收：
+
+1. review-agent 的 `tool_permissions` 阶段能导出 A2UI-compatible JSON。
+2. A2UI 输出不能丢失推荐理由、risk level、requires_input 和 affects。
+3. A2UI action payload 能被后端转换为 session decision patch。
+
+### T15：Component Catalog / Action Protocol
+
+路径：
+
+- `docs/prespec_decision_board.md`
+- `docs/agentspec_runtime.md`
+- `agent_foundry/schemas/decision_board.schema.json`
+- `agent_foundry/schemas/decision_question.schema.json`
+- 后续可新增：`agent_foundry/schemas/action_event.schema.json`
+- 后续可新增：`agent_foundry/renderers/component_catalog.py`
+- 后续可新增：`tests/test_action_protocol.py`
+
+任务：
+
+1. 固化 Agent Builder UI 组件 catalog。
+2. 定义组件输入 props、输出 events、state key、validation rules。
+3. 定义 action protocol：`select_option`、`update_text`、`confirm_stage`、`save_draft`、`show_impact`、`request_approval`。
+4. 定义事件回放规则：同一 action event 可重复应用或被安全拒绝。
+5. 定义错误反馈：非法选项、缺少 required input、权限升级需要确认。
+
+验收：
+
+1. CLI、Web、A2UI 都使用同一套 action / event 语义。
+2. action event 能更新 `PreSpecSession`，并重新生成 `ImpactPreview`。
+3. 非法 action 不会污染 session。
+
+### T16：UI E2E Demo
+
+路径：
+
+- `agent_foundry/cli.py`
+- `agent_foundry/builder/decision_board.py`
+- `agent_foundry/builder/agentspec_compiler.py`
+- `agent_foundry/builder/file_generator.py`
+- `agent_foundry/runtime/dry_run.py`
+- `examples/svn_review/sample_diff.diff`
+- `examples/wechat_writer/sample_material.txt`
+- `docs/example_agents.md`
+- `docs/ultimate_task_todo.md`
+- 后续可新增：`examples/ui_demo/`
+- 后续可新增：`tests/test_ui_e2e.py`
+
+任务：
+
+1. 准备 review-agent UI demo：自然语言 -> decision board -> action events -> session -> AgentSpec -> dry run。
+2. 准备 writing-agent UI demo：素材 -> topic selection -> outline / draft -> publish package -> style patch。
+3. 产出 demo fixtures，包含输入、交互事件、最终 session、AgentSpec 和输出产物。
+4. 记录 demo 验收命令和输出路径。
+5. 确认 Web / A2UI renderer 与 CLI 共享同一业务协议。
+
+验收：
+
+1. 两个示例 Agent 都能用 action events 走完主链路。
+2. UI 层不绕过 `tool_policy`、`human_feedback`、`memory.update_requires_approval`。
+3. demo 输出可作为回归测试 fixture。
+
 ## 长任务执行建议
 
 推荐执行顺序：
@@ -425,10 +540,15 @@ git status --short --branch
 T0 -> T1 -> T2 -> T3 -> T4 -> T6 -> T7 -> T8 -> T9 -> T10 -> T11 -> T12
 ```
 
-可以暂缓：
+第二阶段终局任务：
 
-- Web renderer。
-- A2UI-compatible renderer。
+- T13 Web Renderer。
+- T14 A2UI-compatible Renderer。
+- T15 Component Catalog / Action Protocol。
+- T16 UI E2E Demo。
+
+仍可暂缓到更后面：
+
 - 真实 SVN 调用。
 - 真实公众号发布。
 - 长期后台运行。

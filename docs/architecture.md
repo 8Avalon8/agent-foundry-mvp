@@ -96,7 +96,8 @@ default_feedback: choice_then_chat
 default_memory: style_rule_patch
 default_permissions:
   read_notes: ask_or_allow
-  write_draft: allow
+  write_draft: ask
+  external_publish: deny
   publish: explicit_approval
 ```
 
@@ -202,4 +203,3 @@ LLM 负责：
 - Rule Patch / Style Patch 审批要求。
 
 原则：LLM 可以提案和解释，但不能绕过权限策略。
-

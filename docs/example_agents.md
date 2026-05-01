@@ -22,7 +22,7 @@ SVN Review Agent 是最适合做 MVP 的 Agent。
 2. 生成 review 报告。
 3. 每条 finding 有风险等级、证据、建议和置信度。
 4. 用户可以标记每条 finding。
-5. 根据反馈生成 `learned_rules.md` patch 或 `rule_patch_proposal.md`。
+5. 根据反馈生成 `rule_patch_proposal.md` 候选，不自动写入 `learned_rules.md`。
 
 ### 输出产物
 
@@ -32,6 +32,7 @@ findings.json
 test_suggestions.md
 optional_patch.diff
 rule_patch_proposal.md
+feedback_requests.json
 ```
 
 ### 推荐默认配置
@@ -53,7 +54,7 @@ tool_policy:
   shell.run_tests:
     permission: ask
   fs.write_patch:
-    permission: ask
+    permission: deny
   fs.modify_source:
     permission: ask
   svn.commit:
@@ -124,7 +125,8 @@ output:
 
 ```text
 article.md
-title_options.md
+topic_options.md
+outline.md
 summary.md
 cover_prompt.md
 publish_checklist.md
@@ -142,9 +144,9 @@ tool_policy:
   read_notes:
     permission: ask_or_allow
   write_draft:
-    permission: allow
-  external_publish:
     permission: ask
+  external_publish:
+    permission: deny
 human_feedback:
   topic_selection:
     mode: choice
@@ -199,4 +201,3 @@ AI review 最有价值的不是找 bug，而是逼我显式化规则。
 4. 生成 HTML 预览。
 5. 接入飞书。
 6. 接入公众号发布前检查。
-

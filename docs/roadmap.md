@@ -233,7 +233,7 @@ output_schema.json
 4. 用户能标记 finding。
 5. 系统能生成 `rule_patch_proposal.md`。
 
-当前状态：已有 dry run 输出；用户反馈采集和 rule patch 闭环仍需增强。
+当前状态：已支持 dry run 输出、`feedback_requests.json`、finding label CLI 和 `rule_patch_proposal.md` 候选生成；不会自动写入长期规则。
 
 ### Milestone 10：微信公众号写作 Agent MVP
 
@@ -249,7 +249,7 @@ output_schema.json
 6. 输出发布包。
 7. 生成 `style_rule_patch.md`。
 
-当前状态：已有 writing-agent dry run 基础；交互式选题反馈仍需增强。
+当前状态：已支持 writing-agent dry run、3-5 个选题、选题选择、发布包和 `style_rule_patch.md` 候选生成；不会自动写入长期风格规则。
 
 ## 五个小迭代
 
@@ -310,13 +310,7 @@ output_schema.json
 
 ## 下一步建议
 
-当前代码已经有不少骨架，下一步不需要从零实现 Iteration 1，而应该做一次“协议收束”：
-
-1. 对照 `docs/prespec_decision_board.md` 检查 `agent_foundry/builder/models.py`。
-2. 对照 `docs/agentspec_runtime.md` 检查 `agent_foundry/builder/agentspec_compiler.py`。
-3. 补齐 review-agent 的关键问题模板和影响预览。
-4. 给未确认高风险默认值补测试。
-5. 增强 CLI 交互选择和自然语言补充。
+当前 T0-T12 MVP 已进入验收收口；下一步优先做 T12 的端到端命令验证和生成物检查。Web / A2UI / UI demo 属于第二阶段 T13-T16，不属于当前已交付范围。
 
 ## 第一版暂不做
 
@@ -344,3 +338,9 @@ output_schema.json
   -> dry run
 ```
 
+Web / A2UI 并不是终局外的内容，而是第二阶段任务。具体拆分见 `docs/ultimate_task_todo.md` 中的 T13-T16：
+
+- T13 Web Renderer
+- T14 A2UI-compatible Renderer
+- T15 Component Catalog / Action Protocol
+- T16 UI E2E Demo

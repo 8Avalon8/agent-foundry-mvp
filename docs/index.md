@@ -31,7 +31,7 @@
 
 ## 当前项目状态
 
-当前代码已经覆盖第一条核心链路的大部分骨架：
+当前代码已经覆盖 MVP 主链路：
 
 ```text
 自然语言需求
@@ -42,9 +42,11 @@
   -> AgentSpec v0.1
   -> Agent 工程文件
   -> Deterministic or LLM Dry Run
+  -> feedback label / topic selection
+  -> Rule Patch / Style Patch 候选
 ```
 
-可用命令见根目录 [README.md](../README.md)。规划文档描述的是目标形态和下一步收束方向；实现时以当前代码为准，低风险迭代，优先保持 mock provider 路径可测。
+可用命令和验收矩阵见根目录 [README.md](../README.md) 与 [PROJECT_STATUS.md](../PROJECT_STATUS.md)。规划文档中 T0-T12 是当前 MVP 收束范围；T13-T16 是第二阶段 Web / A2UI / UI demo 规划，不要写成已交付能力。
 
 ## Source of Truth
 

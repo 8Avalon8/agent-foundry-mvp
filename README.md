@@ -313,13 +313,30 @@ MVP 重点验证：
 python3 -m unittest discover -s tests -v
 ```
 
-当前新增测试：
+当前测试覆盖：
 
 ```text
-1. Mock LLM 能生成动态 Pre-Spec 问题
-2. Mock LLM 能编译 AgentSpec 并执行 LLM dry run
-3. 自然语言补充能更新 PreSpecSession
+1. Mock / OpenAI provider 初始化路径
+2. DecisionQuestion / PreSpecSession schema 与 round-trip
+3. Decision Graph visible_when 条件分支
+4. CLI interactive / saved session resume
+5. Impact Preview before/after diff
+6. Agent Design Card 阶段分组
+7. AgentSpec 安全默认值和 schema 约束
+8. 工程文件生成稳定文件集
+9. Review / Writing feedback 闭环
+10. Runtime Permission Engine approval request
 ```
+
+## MVP 验收矩阵
+
+| 验收项 | 命令 | 预期证据 |
+| --- | --- | --- |
+| 全量单测 | `python3 -m unittest discover -s tests -v` | 测试全部通过。 |
+| Review board | `python3 -m agent_foundry.cli board "我想做一个 SVN Review Agent" --llm-provider mock --stage feedback_protocol --format cli` | 展示动态问题、推荐理由和影响预览。 |
+| Review E2E | `python3 -m agent_foundry.cli new "我想做一个 SVN Review Agent，帮我审查 diff" --llm-provider mock --accept-recommended --dry-run --output ./workspace` | dry run 下生成 `review_report.md`、`findings.json`、`test_suggestions.md`、`feedback_requests.json`、`rule_patch_proposal.md`。 |
+| Writing E2E | `python3 -m agent_foundry.cli new "我想做一个微信公众号写作 Agent，帮我把素材变成文章" --llm-provider mock --accept-recommended --dry-run --output ./workspace` | dry run 下生成 `topic_options.md`、`outline.md`、`article.md`、`publish_package.json`、`style_rule_patch.md`。 |
+| 权限安全 | 查看生成的 `agent.yaml` 与 `permission_checks.json` | 高风险动作没有静默 `allow`，长期记忆更新需要审批。 |
 
 ---
 
