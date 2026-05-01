@@ -74,6 +74,8 @@ The LLM proposes and explains. Deterministic code still compiles and enforces:
 | Writing agent E2E | `python3 -m agent_foundry.cli new "我想做一个微信公众号写作 Agent，帮我把素材变成文章" --llm-provider mock --accept-recommended --dry-run --output ./workspace` | `topic_options.md`, `outline.md`, `article.md`, `publish_package.json`, `style_rule_patch.md`. |
 | Safety | Inspect generated `agent.yaml` and `permission_checks.json` | No silent high-risk `allow`; memory updates require approval. |
 
+Last verified on 2026-05-01: 37 unit tests passed; mock board, review-agent E2E, writing-agent E2E, and generated permission checks passed.
+
 ## Next
 
 MVP T0-T12 is the current implementation target. T13-T16 in `docs/ultimate_task_todo.md` are second-phase Web / A2UI / UI demo work and remain planned, not delivered.

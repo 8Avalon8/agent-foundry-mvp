@@ -412,8 +412,8 @@ git status --short --branch
 
 最终输出：
 
-- SVN Review Agent：`review_report.md`、`findings.json`、`test_suggestions.md`、`rule_patch_proposal.md`。
-- Writing Agent：`article.md`、`topic_options.md`、`outline.md`、`publish_package.json`、`style_rule_patch.md`。
+- SVN Review Agent：`review_report.md`、`findings.json`、`test_suggestions.md`、`feedback_requests.json`、`rule_patch_proposal.md`。
+- Writing Agent：`topic_options.md`、`topic_options.json`、`topic_selection_request.json`、`outline.md`、`article.md`、`publish_package.json`、`style_rule_patch.md`。
 - 文档：source of truth 与当前实现状态一致。
 - 权限：高风险动作没有静默 `allow`。
 
@@ -421,7 +421,7 @@ git status --short --branch
 
 - T0-T10 已完成代码收束，并由单测覆盖 provider、schema、Decision Graph、CLI interactive、Impact Preview、Design Card、AgentSpec 安全默认值、文件生成、review feedback、writing feedback 和 Permission Engine。
 - T11 文档同步范围：`README.md`、`PROJECT_STATUS.md`、`docs/index.md`、`docs/roadmap.md`、`docs/prespec_decision_board.md`、`docs/agentspec_runtime.md` 与本文件保持 source of truth 一致。
-- T12 仍需在干净生成目录运行端到端验收命令并确认没有提交运行生成物。
+- T12 已于 2026-05-01 通过端到端验收：37 条单测通过，mock board / review dry run / writing dry run 通过，`permission_checks.json` 中没有 high / critical 静默 `allow`，`workspace/` 仅作为 ignored 生成物存在。
 - T13-T16 是第二阶段 Web / A2UI / UI demo 规划，当前不标记为已交付。
 
 ### T13：Web Renderer
